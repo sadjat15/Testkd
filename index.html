@@ -101,7 +101,6 @@
         .tab-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; box-shadow: 0 4px 10px rgba(59,130,246,0.3); }
         .tab-btn:hover:not(.active) { background: #e2e8f0; color: #1e293b; }
 
-        /* --- NEW: MODERN LISTS & GRIDS (Box Type) --- */
         .list-item { 
             display: flex; justify-content: space-between; align-items: center; 
             background: #ffffff; padding: 16px 20px; border-radius: 12px; 
@@ -110,15 +109,8 @@
         }
         .list-item:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.05); border-color: #cbd5e1; }
         
-        /* Grid specifically for analytics to keep columns perfectly in line */
-        .grid-row {
-            display: grid;
-            grid-template-columns: 2fr 3fr 1fr;
-            align-items: center;
-            gap: 15px;
-        }
+        .grid-row { display: grid; grid-template-columns: 2fr 3fr 1fr; align-items: center; gap: 15px; }
         
-        /* Group Headings */
         .group-heading {
             background: #f1f5f9; color: #475569; padding: 8px 15px;
             border-radius: 8px; font-size: 14px; font-weight: bold;
@@ -309,7 +301,7 @@
         <div id="adminSettings" class="admin-view hidden">
             <h3 class="section-title">✨ AI Integration</h3>
             <div class="password-container">
-                <input type="password" id="adminAiKey" placeholder="Gemini API Key">
+                <input type="password" id="adminAiKey" placeholder="Gemini API Key" value="AIzaSyCNkFzxsY3G1dW_MczfkbkuoA3nZhuPgsA">
                 <span class="toggle-password" onclick="toggleVisibility('adminAiKey')">👁️</span>
             </div>
             <button class="btn-student" onclick="saveGeminiKey()">Save API Key</button>
@@ -434,7 +426,9 @@
         // --- 2. GLOBAL DATA ---
         let allTests = []; let userDatabase = []; let studentScores = []; 
         let cloudAdminId = "9813324253"; let cloudAdminPass = "Sachin@123";
-        let appDownloadUrl = "#"; let storedGeminiKey = ""; 
+        let appDownloadUrl = "#"; 
+        // Added the Gemini API Key here as default
+        let storedGeminiKey = "AIzaSyCNkFzxsY3G1dW_MczfkbkuoA3nZhuPgsA"; 
         let appGuidelines = "1. Be respectful.\n2. Do not cheat.";
         let currentUserId = null; let activeAdminTestId = null; let editingQuestionIndex = null; 
         let activeStudentTestId = null; let currentQuestionIndex = 0; let userAnswers = [];
@@ -450,7 +444,8 @@
                     studentScores = data.studentScores ? JSON.parse(data.studentScores) : [];
                     cloudAdminId = data.adminId || "9813324253"; cloudAdminPass = data.adminPass || "Sachin@123";
                     appGuidelines = data.guidelines || appGuidelines; appDownloadUrl = data.appDownloadUrl || "#";
-                    storedGeminiKey = data.geminiKey || ""; 
+                    // If no key is in the database yet, it falls back to the hardcoded default
+                    storedGeminiKey = data.geminiKey || "AIzaSyCNkFzxsY3G1dW_MczfkbkuoA3nZhuPgsA"; 
 
                     document.getElementById('appBannerLink').href = appDownloadUrl;
                     updateGroupDatalist();
@@ -528,9 +523,18 @@
         function switchAdminTab(vId) { document.querySelectorAll('#adminPanel .admin-view').forEach(el=>el.classList.add('hidden')); document.querySelectorAll('#adminTabs .tab-btn').forEach(el=>el.classList.remove('active')); document.getElementById(vId).classList.remove('hidden'); event.target.classList.add('active'); if(vId==='adminAnalytics') renderAdminAnalytics(); if(vId==='adminTestManager') renderAdminTestList(); if(vId==='adminUserManager') renderAdminUserList(); }
         function switchStudentTab(vId) { document.querySelectorAll('#userPanel .student-view').forEach(el=>el.classList.add('hidden')); document.querySelectorAll('#studentTabs .tab-btn').forEach(el=>el.classList.remove('active')); document.getElementById(vId).classList.remove('hidden'); if(event) event.target.classList.add('active'); if(vId==='studentTestSelector') renderStudentDashboard(); if(vId==='studentLeaderboard') populateLeaderboardDropdown(); }
 
+        // --- Added Missing Function to Save Gemini Key from Settings Panel ---
+        function saveGeminiKey() {
+            storedGeminiKey = document.getElementById('adminAiKey').value;
+            saveData();
+            const msg = document.getElementById('aiKeyMsg');
+            msg.innerText = "API Key Saved Successfully!";
+            msg.style.display = 'block';
+            setTimeout(() => { msg.style.display = 'none'; }, 3000);
+        }
+
         // --- 4. ADMIN FEATURES & GROUPS ---
         
-        // Dynamically populate the datalist for groups
         function updateGroupDatalist() {
             const groups = [...new Set(allTests.map(t => t.group || 'General'))];
             const datalist = document.getElementById('existingGroups');
@@ -555,7 +559,6 @@
             const div = document.getElementById('adminTestList'); div.innerHTML = '';
             if (allTests.length === 0) return div.innerHTML = '<p>No tests created.</p>';
             
-            // Group tests
             const groups = allTests.reduce((acc, test) => {
                 const g = test.group || 'General';
                 if(!acc[g]) acc[g] = [];
@@ -592,7 +595,6 @@
             });
         }
 
-        // --- Question Editor Logic ---
         function openTestEditor(id) { activeAdminTestId = id; document.getElementById('editingTestTitle').innerText = `Editing: ${allTests.find(t=>t.id===id).name}`; document.querySelectorAll('.admin-view').forEach(el=>el.classList.add('hidden')); document.getElementById('adminQuestionEditor').classList.remove('hidden'); cancelEdit(); renderAdminQuestionList(); }
         function renderAdminQuestionList() {
             const div = document.getElementById('adminExistingQuestionsList'); const t = allTests.find(t=>t.id===activeAdminTestId); div.innerHTML='';
@@ -624,12 +626,10 @@
         
         function renderAdminUserList() { const div=document.getElementById('adminUserList'); div.innerHTML=''; userDatabase.forEach((u,i) => div.innerHTML+=`<div class="list-item"><div><strong>${u.name}</strong> (ID: ${u.id})</div><button class="btn-admin" onclick="userDatabase.splice(${i},1);saveData();renderAdminUserList();">Rem</button></div>`); }
 
-        // --- 5. STUDENT PORTAL ---
         function renderStudentDashboard() {
             const testsDiv = document.getElementById('studentTestList'); testsDiv.innerHTML = '';
             const playableTests = allTests.filter(t => t.questions.length > 0);
             
-            // Group tests for student view
             const groups = playableTests.reduce((acc, test) => {
                 const g = test.group || 'General';
                 if(!acc[g]) acc[g] = [];
@@ -661,7 +661,6 @@
             });
         }
 
-        // --- Quiz Logic remains functionally similar, mapped to new UI ---
         function startQuiz(id) { activeStudentTestId=id; currentQuestionIndex=0; const t=allTests.find(t=>t.id===id); userAnswers=new Array(t.questions.length).fill(null); document.querySelectorAll('.student-view').forEach(e=>e.classList.add('hidden')); document.getElementById('quizContainer').classList.remove('hidden'); document.getElementById('activeQuizTitle').innerText=t.name; document.getElementById('pauseScreen').classList.add('hidden'); document.getElementById('quizContent').classList.remove('hidden'); isPaused=false; renderQuestion(); startTimer(t.timeLimit); }
         function renderQuestion() { const t=allTests.find(t=>t.id===activeStudentTestId); const q=t.questions[currentQuestionIndex]; document.getElementById('questionCountText').innerText=`Q ${currentQuestionIndex+1} of ${t.questions.length}`; document.getElementById('questionDisplay').innerText=getTextByLang(q.question, currentQuizLang); const img=document.getElementById('questionImageDisplay'); if(q.image){ img.src=q.image; img.classList.remove('hidden'); }else img.classList.add('hidden'); const opts=document.getElementById('optionsDisplay'); opts.innerHTML=''; q.options.forEach((o,i)=>{ const c=userAnswers[currentQuestionIndex]===i?"checked":""; const s=c?"border-color:#3b82f6; background:#eff6ff;":""; opts.innerHTML+=`<label class="option-label" style="${s}"><input type="radio" name="qo" onchange="userAnswers[${currentQuestionIndex}]=${i};renderQuestion();" ${c}> ${getTextByLang(o,currentQuizLang)}</label>`; }); document.getElementById('prevBtn').disabled=currentQuestionIndex===0; document.getElementById('nextBtn').innerText=currentQuestionIndex===t.questions.length-1?"Submit":"Next"; }
         function navigateQuestion(d) { const t=allTests.find(t=>t.id===activeStudentTestId); if(d===1 && currentQuestionIndex===t.questions.length-1) return submitTestEarly(); currentQuestionIndex+=d; renderQuestion(); }
@@ -681,8 +680,13 @@
         function renderLeaderboardData() { const tId=document.getElementById('leaderboardTestSelect').value; const div=document.getElementById('leaderboardResults'); div.innerHTML=''; if(!tId) return; const scores=studentScores.filter(s=>s.testId===tId); const high={}; scores.forEach(s=>{ if(!high[s.studentId] || high[s.studentId].score<s.score) high[s.studentId]=s; }); Object.values(high).sort((a,b)=>b.score-a.score).forEach((r,i)=>{ const rank=i+1; div.innerHTML+=`<div class="list-item"><div><span class="rank-badge rank-${rank<4?rank:''}">#${rank}</span> <strong>${r.studentName}</strong></div><div style="font-weight:bold;">${Math.round((r.score/r.total)*100)}%</div></div>`; }); }
         function populateLeaderboardDropdown() { const sel=document.getElementById('leaderboardTestSelect'); sel.innerHTML='<option value="">Select test...</option>'; [...new Set(studentScores.map(s=>s.testId))].forEach(id=>{ const t=allTests.find(t=>t.id===id); if(t) sel.innerHTML+=`<option value="${id}">${t.name}</option>`; }); }
         
-        // --- Dummy AI Function ---
-        async function generateQuestionWithAI() { alert("Gemini generation triggered. (Requires your API configuration to work)"); }
+        // --- Dummy AI Function Updated to Read the Key ---
+        async function generateQuestionWithAI() { 
+            if (!storedGeminiKey) {
+                return alert("Please configure the API Key in Settings first.");
+            }
+            alert(`Gemini generation triggered. The app is set to use key: ${storedGeminiKey.substring(0, 10)}... (Requires the backend logic to execute the actual call)`); 
+        }
     </script>
 </body>
 </html>
