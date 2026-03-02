@@ -253,11 +253,20 @@
             <button class="btn-secondary" style="margin-bottom: 20px; width: auto; font-size: 14px; padding: 8px 15px;" onclick="switchAdminTab('adminTestManager')">← Back to Tests</button>
             <h3 class="section-title" id="editingTestTitle" style="color: #3b82f6;">Adding Questions to: </h3>
             
-            <div class="ai-panel">
-                <p style="font-size: 14px; font-weight: bold; color: #059669; margin: 0 0 10px 0;">✨ Generate Question & Options with AI</p>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="aiTopicInput" placeholder="e.g. Basic Electricity, Ohm's law, Math..." style="margin: 0; flex-grow: 1;">
-                    <button id="aiGenerateBtn" class="btn-student" style="margin: 0; width: auto; padding: 10px 20px;" onclick="generateQuestionWithAI()">Generate</button>
+                        <div class="ai-panel">
+                <p style="font-size: 14px; font-weight: bold; color: #059669; margin: 0 0 10px 0;">✨ Bulk Generate Questions with AI</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <input type="text" id="aiTopicInput" placeholder="e.g. Basic Electricity, safety protocols..." style="margin: 0; flex-grow: 1; min-width: 200px;">
+                    
+                    <select id="aiDifficultySelect" style="margin: 0; width: 110px; padding: 10px;">
+                        <option value="easy">Easy</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+
+                    <input type="number" id="aiQuestionCount" placeholder="Qty" value="3" min="1" max="10" style="margin: 0; width: 80px; padding: 10px;" title="Number of questions to generate">
+
+                    <button id="aiGenerateBtn" class="btn-student" style="margin: 0; width: auto; padding: 10px 20px;" onclick="generateBulkQuestionsWithAI()">Bulk Generate</button>
                 </div>
                 <p id="aiGenError" class="error-text" style="margin-top: 10px;"></p>
             </div>
@@ -418,7 +427,7 @@
         let db;
         try {
             firebase.initializeApp(firebaseConfig); db = firebase.firestore();
-            document.getElementById('cloudStatus').innerText = "✅ Connected to Cloud";
+            document.getElementById('cloudStatus');
             document.getElementById('cloudStatus').style.color = "#10b981";
             document.getElementById('cloudStatus').style.background = "#ecfdf5";
         } catch (error) { document.getElementById('cloudStatus').innerText = "⚠️ Saving locally."; }
@@ -680,13 +689,122 @@
         function renderLeaderboardData() { const tId=document.getElementById('leaderboardTestSelect').value; const div=document.getElementById('leaderboardResults'); div.innerHTML=''; if(!tId) return; const scores=studentScores.filter(s=>s.testId===tId); const high={}; scores.forEach(s=>{ if(!high[s.studentId] || high[s.studentId].score<s.score) high[s.studentId]=s; }); Object.values(high).sort((a,b)=>b.score-a.score).forEach((r,i)=>{ const rank=i+1; div.innerHTML+=`<div class="list-item"><div><span class="rank-badge rank-${rank<4?rank:''}">#${rank}</span> <strong>${r.studentName}</strong></div><div style="font-weight:bold;">${Math.round((r.score/r.total)*100)}%</div></div>`; }); }
         function populateLeaderboardDropdown() { const sel=document.getElementById('leaderboardTestSelect'); sel.innerHTML='<option value="">Select test...</option>'; [...new Set(studentScores.map(s=>s.testId))].forEach(id=>{ const t=allTests.find(t=>t.id===id); if(t) sel.innerHTML+=`<option value="${id}">${t.name}</option>`; }); }
         
-        // --- Dummy AI Function Updated to Read the Key ---
-        async function generateQuestionWithAI() { 
+               // --- LIVE AI BULK GENERATION FUNCTION ---
+        async function generateBulkQuestionsWithAI() { 
+            const topicInput = document.getElementById('aiTopicInput');
+            const difficultySelect = document.getElementById('aiDifficultySelect');
+            const countInput = document.getElementById('aiQuestionCount');
+            const generateBtn = document.getElementById('aiGenerateBtn');
+            const errorMsg = document.getElementById('aiGenError');
+            
+            const topic = topicInput.value.trim();
+            const difficulty = difficultySelect.value;
+            const count = parseInt(countInput.value) || 1;
+
+            // 1. Validation
             if (!storedGeminiKey) {
-                return alert("Please configure the API Key in Settings first.");
+                errorMsg.innerText = "Please configure the API Key in Settings first.";
+                errorMsg.style.display = 'block';
+                return;
             }
-            alert(`Gemini generation triggered. The app is set to use key: ${storedGeminiKey.substring(0, 10)}... (Requires the backend logic to execute the actual call)`); 
+            if (!topic) {
+                errorMsg.innerText = "Please enter a topic first.";
+                errorMsg.style.display = 'block';
+                return;
+            }
+            if (count < 1 || count > 10) {
+                errorMsg.innerText = "Please request between 1 and 10 questions at a time.";
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // 2. UI Loading State
+            errorMsg.style.display = 'none';
+            generateBtn.innerText = `Generating ${count}...`;
+            generateBtn.disabled = true;
+
+            // 3. The Prompt - Asking for a JSON Array structured for your database
+            const promptText = `You are an expert test creator. Generate ${count} multiple-choice question(s) about: "${topic}".
+            The difficulty level of these questions should be: ${difficulty.toUpperCase()}.
+            Provide the questions and 4 options in both English and Hindi.
+            Return ONLY a valid JSON ARRAY containing objects. Do not include markdown formatting, backticks, or any other text.
+            Use this exact structure for the array:
+            [
+                {
+                    "question": {
+                        "en": "Question in English here",
+                        "hi": "Question in Hindi here"
+                    },
+                    "options": [
+                        {"en": "Option 1 En", "hi": "Option 1 Hi"},
+                        {"en": "Option 2 En", "hi": "Option 2 Hi"},
+                        {"en": "Option 3 En", "hi": "Option 3 Hi"},
+                        {"en": "Option 4 En", "hi": "Option 4 Hi"}
+                    ],
+                    "correctIndex": <integer 0 to 3 indicating the correct option>,
+                    "image": ""
+                }
+            ]`;
+
+            try {
+                // 4. The API Call
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${storedGeminiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: promptText }] }]
+                    })
+                });
+
+                if (!response.ok) throw new Error("API request failed. Check your API key or network connection.");
+
+                const data = await response.json();
+                
+                // 5. Parse the Response
+                let aiText = data.candidates[0].content.parts[0].text;
+                aiText = aiText.replace(/```json/gi, '').replace(/```/g, '').trim(); 
+                
+                const parsedQuestions = JSON.parse(aiText);
+
+                if (!Array.isArray(parsedQuestions)) {
+                    throw new Error("AI did not return an array. Try again.");
+                }
+
+                // 6. Add Directly to the Test
+                const currentTest = allTests.find(t => t.id === activeAdminTestId);
+                
+                parsedQuestions.forEach(qData => {
+                    currentTest.questions.push({
+                        question: { en: qData.question?.en || "Error", hi: qData.question?.hi || "Error" },
+                        options: qData.options || [],
+                        correctIndex: parseInt(qData.correctIndex) || 0,
+                        image: ""
+                    });
+                });
+
+                // 7. Save to Cloud and Update UI
+                saveData();
+                renderAdminQuestionList();
+
+                // Success message
+                document.getElementById('adminMessage').innerText = `✨ Successfully added ${parsedQuestions.length} questions!`;
+                document.getElementById('adminMessage').style.display = 'block';
+                setTimeout(() => document.getElementById('adminMessage').style.display = 'none', 4000);
+                
+                // Clear the topic input so it's ready for the next one
+                topicInput.value = '';
+
+            } catch (error) {
+                console.error("AI Generation Error:", error);
+                errorMsg.innerText = "Failed to generate questions. " + error.message;
+                errorMsg.style.display = 'block';
+            } finally {
+                // 8. Reset Button UI
+                generateBtn.innerText = "Bulk Generate";
+                generateBtn.disabled = false;
+            }
         }
+
     </script>
 </body>
 </html>
