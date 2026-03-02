@@ -19,6 +19,28 @@
             margin: 0; min-height: 100vh; 
         }
 
+        /* --- CUSTOM SCROLLBAR --- */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f8fafc; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 10px;
+            border: 2px solid #f8fafc; 
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        .modal-box::-webkit-scrollbar, 
+        .guidelines-box::-webkit-scrollbar {
+            width: 8px;
+        }
+
         .app-banner {
             position: fixed; top: 0; left: 0; width: 100%; 
             background: #1e293b; color: white; text-align: center; 
@@ -271,7 +293,17 @@
                 <p id="aiGenError" class="error-text" style="margin-top: 10px;"></p>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+            <div class="ai-panel" style="background: #eef2ff; border-color: #6366f1; margin-top: 15px;">
+                <p style="font-size: 14px; font-weight: bold; color: #4338ca; margin: 0 0 10px 0;">📄 Auto-Extract from PDF (AI)</p>
+                <p style="font-size: 12px; color: #64748b; margin-top: 0;">Upload a PDF test. The AI will read it, extract up to 100 questions, and format them automatically.</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <input type="file" id="pdfUploadInput" accept="application/pdf" style="margin: 0; flex-grow: 1; padding: 10px; background: #fff;">
+                    <button id="pdfExtractBtn" class="btn-student" style="background: #4f46e5; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2); margin: 0; width: auto; padding: 10px 20px;" onclick="extractQuestionsFromPDF()">Extract Questions</button>
+                </div>
+                <p id="pdfExtractMsg" style="font-size: 13px; font-weight: 600; margin-top: 10px; display: none;"></p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; margin-top: 25px;">
                 <input type="text" id="qTextEn" placeholder="Question (English)">
                 <input type="text" id="qTextHi" placeholder="Question (Hindi)">
             </div>
@@ -426,7 +458,7 @@ const firebaseConfig = {
 };
 
 let db;
-let isDataLoaded = false; // NEW: Prevents accidental overwrites before cloud sync
+let isDataLoaded = false; 
 
 // --- 2. GLOBAL DATA ---
 let allTests = []; let userDatabase = []; let studentScores = []; 
@@ -438,7 +470,6 @@ let currentUserId = null; let activeAdminTestId = null; let editingQuestionIndex
 let activeStudentTestId = null; let currentQuestionIndex = 0; let userAnswers = [];
 let currentQuizLang = 'en'; let testTimerInterval; let timeRemainingSeconds = 0; let isPaused = false;
 
-// NEW: Safety Net - Load from Local Storage immediately so the app isn't empty
 try {
     const localBackup = localStorage.getItem("kd_app_backup");
     if (localBackup) {
@@ -451,7 +482,7 @@ try {
         appGuidelines = data.guidelines || appGuidelines; 
         appDownloadUrl = data.appDownloadUrl || "#";
         storedGeminiKey = data.geminiKey || storedGeminiKey;
-        isDataLoaded = true; // Safe to save locally
+        isDataLoaded = true; 
     }
 } catch(e) { console.warn("No local backup found."); }
 
@@ -462,7 +493,6 @@ try {
     document.getElementById('cloudStatus').style.color = "#10b981";
     document.getElementById('cloudStatus').style.background = "#ecfdf5";
 
-    // Listen for live updates
     db.collection("kd_app").doc("global_data").onSnapshot((doc) => {
         if (doc.exists) {
             const data = doc.data();
@@ -483,7 +513,7 @@ try {
             if (!document.getElementById('studentTestSelector').classList.contains('hidden')) renderStudentDashboard();
         }
         
-        isDataLoaded = true; // Cloud has finished syncing
+        isDataLoaded = true; 
         
     }, (error) => {
         console.error("Firebase Security Error:", error);
@@ -501,14 +531,8 @@ function saveData() {
         studentScores: JSON.stringify(studentScores), adminId: cloudAdminId, adminPass: cloudAdminPass,
         guidelines: appGuidelines, appDownloadUrl: appDownloadUrl, geminiKey: storedGeminiKey
     };
-
-    // 1. ALWAYS save to local browser storage first as a backup
     localStorage.setItem("kd_app_backup", JSON.stringify(payload));
-
-    // 2. Prevent overwriting the cloud if the cloud hasn't loaded your data yet!
     if (!db || !isDataLoaded) return;
-
-    // 3. Save to cloud with error tracking
     db.collection("kd_app").doc("global_data").set(payload)
       .catch(error => {
           console.error("Cloud Save Error:", error);
@@ -673,7 +697,6 @@ function saveData() {
         
         function renderAdminUserList() { const div=document.getElementById('adminUserList'); div.innerHTML=''; userDatabase.forEach((u,i) => div.innerHTML+=`<div class="list-item"><div><strong>${u.name}</strong> (ID: ${u.id})</div><button class="btn-admin" onclick="userDatabase.splice(${i},1);saveData();renderAdminUserList();">Rem</button></div>`); }
 
-        // --- FULLY UPDATED: LIVE AI BULK GENERATION FIXING THE MODEL STRING TO THE LATEST STABLE ---
         async function generateBulkQuestionsWithAI() { 
             const topicInput = document.getElementById('aiTopicInput');
             const difficultySelect = document.getElementById('aiDifficultySelect');
@@ -728,15 +751,12 @@ function saveData() {
             ]`;
 
             try {
-                // UPDATE: Changed model to gemini-2.5-flash as the 1.5 versions are deprecated
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${storedGeminiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: promptText }] }],
-                        generationConfig: {
-                            responseMimeType: "application/json"
-                        }
+                        generationConfig: { responseMimeType: "application/json" }
                     })
                 });
 
@@ -748,7 +768,6 @@ function saveData() {
                             detailedError = errorData.error.message;
                         }
                     } catch(e) {} 
-                    
                     throw new Error(`Google API Error: ${detailedError}`);
                 }
 
@@ -756,9 +775,7 @@ function saveData() {
                 const aiText = data.candidates[0].content.parts[0].text;
                 const parsedQuestions = JSON.parse(aiText);
 
-                if (!Array.isArray(parsedQuestions)) {
-                    throw new Error("AI did not return an array. Try again.");
-                }
+                if (!Array.isArray(parsedQuestions)) throw new Error("AI did not return an array. Try again.");
 
                 const currentTest = allTests.find(t => t.id === activeAdminTestId);
                 
@@ -788,6 +805,113 @@ function saveData() {
                 generateBtn.innerText = "Bulk Generate";
                 generateBtn.disabled = false;
             }
+        }
+
+        // --- NEW: PDF EXTRACTION VIA GEMINI AI ---
+        function extractQuestionsFromPDF() {
+            const fileInput = document.getElementById('pdfUploadInput');
+            const extractBtn = document.getElementById('pdfExtractBtn');
+            const msgBox = document.getElementById('pdfExtractMsg');
+
+            if (!storedGeminiKey) {
+                msgBox.innerText = "Please configure the API Key in Settings first.";
+                msgBox.style.color = "#ef4444";
+                msgBox.style.display = 'block';
+                return;
+            }
+            if (!fileInput.files || fileInput.files.length === 0) {
+                msgBox.innerText = "Please select a PDF file first.";
+                msgBox.style.color = "#ef4444";
+                msgBox.style.display = 'block';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            msgBox.style.color = "#4338ca";
+            msgBox.innerText = "Reading PDF and calling AI... (This may take 30-60 seconds for a full 100-question test)";
+            msgBox.style.display = 'block';
+            extractBtn.disabled = true;
+            extractBtn.innerText = "Extracting...";
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64String = e.target.result.split(',')[1];
+                
+                const promptText = `You are an expert test digitizer. Read the provided PDF document which contains a test/quiz.
+                Extract ALL the multiple-choice questions you can find in the document.
+                Provide the questions and 4 options. 
+                If the language is English, put it in 'en'. If Hindi, put it in 'hi'. If it's mixed, fill both or put the source text in 'en'.
+                Try to deduce the correct index (0 to 3) if an answer key is provided. If you can't find an answer, default to 0.
+                Return ONLY a valid JSON ARRAY.
+                Exact structure per question:
+                [
+                    {
+                        "question": {"en": "Question text here", "hi": "हिंदी प्रश्न यहाँ"},
+                        "options": [
+                            {"en": "Opt 1", "hi": "विकल्प 1"}, 
+                            {"en": "Opt 2", "hi": "विकल्प 2"}, 
+                            {"en": "Opt 3", "hi": "विकल्प 3"}, 
+                            {"en": "Opt 4", "hi": "विकल्प 4"}
+                        ],
+                        "correctIndex": 0,
+                        "image": ""
+                    }
+                ]`;
+
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${storedGeminiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: promptText },
+                                    { inlineData: { mimeType: "application/pdf", data: base64String } }
+                                ]
+                            }],
+                            generationConfig: { responseMimeType: "application/json" }
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error?.message || "API Request Failed");
+                    }
+
+                    const data = await response.json();
+                    let aiText = data.candidates[0].content.parts[0].text;
+                    const parsedQuestions = JSON.parse(aiText);
+
+                    if (!Array.isArray(parsedQuestions)) throw new Error("AI did not return an array. Try again.");
+
+                    const currentTest = allTests.find(t => t.id === activeAdminTestId);
+                    
+                    parsedQuestions.forEach(qData => {
+                        currentTest.questions.push({
+                            question: { en: qData.question?.en || "", hi: qData.question?.hi || "" },
+                            options: qData.options || [ {en:"A", hi:""}, {en:"B", hi:""}, {en:"C", hi:""}, {en:"D", hi:""} ],
+                            correctIndex: parseInt(qData.correctIndex) || 0,
+                            image: ""
+                        });
+                    });
+
+                    saveData();
+                    renderAdminQuestionList();
+
+                    msgBox.innerText = `✨ Success! Extracted ${parsedQuestions.length} questions from the PDF.`;
+                    msgBox.style.color = "#10b981"; 
+                    fileInput.value = ""; 
+
+                } catch (error) {
+                    console.error("PDF Extraction Error:", error);
+                    msgBox.innerText = "Error: " + error.message;
+                    msgBox.style.color = "#ef4444";
+                } finally {
+                    extractBtn.innerText = "Extract Questions";
+                    extractBtn.disabled = false;
+                }
+            };
+            reader.readAsDataURL(file);
         }
 
         // --- 5. STUDENT PORTAL ---
