@@ -12,11 +12,26 @@
         /* --- MODERNIZED CSS --- */
         body { 
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); /* Modern Gradient */
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); 
             color: #2c3e50; 
             display: flex; flex-direction: column; align-items: center; 
-            padding: 20px; margin: 0; min-height: 100vh; 
+            padding: 20px; padding-top: 60px; /* Added padding for top banner */
+            margin: 0; min-height: 100vh; 
         }
+
+        /* NEW: Top App Banner */
+        .app-banner {
+            position: fixed; top: 0; left: 0; width: 100%; 
+            background: #2c3e50; color: white; text-align: center; 
+            padding: 12px 0; z-index: 2000; font-size: 14px; font-weight: 500;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .app-banner a {
+            color: #f1c40f; font-weight: bold; text-decoration: none; 
+            margin-left: 5px; padding: 4px 10px; background: rgba(255,255,255,0.1);
+            border-radius: 12px; transition: all 0.2s;
+        }
+        .app-banner a:hover { background: #f1c40f; color: #2c3e50; }
         
         .container { 
             background: rgba(255, 255, 255, 0.95); 
@@ -27,7 +42,7 @@
             animation: slideUp 0.4s ease-out forwards; 
         }
         
-        .landing-container { text-align: center; margin-top: 10vh; max-width: 450px; }
+        .landing-container { text-align: center; margin-top: 5vh; max-width: 450px; }
         .hidden { display: none !important; }
         
         @keyframes slideUp { 
@@ -35,7 +50,6 @@
             to { opacity: 1; transform: translateY(0); } 
         }
 
-        /* Modern Inputs */
         input[type="text"], input[type="password"], input[type="number"], select, textarea, input[type="file"] { 
             width: 100%; padding: 14px; margin: 10px 0 18px 0; 
             border: 2px solid #e1e8ed; border-radius: 10px; 
@@ -53,7 +67,6 @@
         .toggle-password { position: absolute; right: 15px; top: 40%; transform: translateY(-50%); cursor: pointer; color: #95a5a6; }
         .toggle-password:hover { color: #34495e; }
 
-        /* Modern Buttons */
         button { 
             background-color: #3498db; color: white; border: none; 
             padding: 14px 20px; border-radius: 10px; cursor: pointer; 
@@ -80,9 +93,8 @@
         .error-text { color: #e74c3c; font-size: 14px; margin-top: -10px; margin-bottom: 15px; display: none; font-weight: 500; }
         .success-text { color: #2ecc71; font-size: 14px; margin-top: 10px; display: none; text-align: center; font-weight: bold; }
 
-        /* Modals */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 1000; animation: fadeIn 0.2s ease-out; }
-        .modal-box { background: white; padding: 40px 30px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); width: 360px; text-align: center; animation: slideUp 0.3s ease-out; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 3000; animation: fadeIn 0.2s ease-out; }
+        .modal-box { background: white; padding: 40px 30px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); width: 360px; max-height: 90vh; overflow-y: auto; text-align: center; animation: slideUp 0.3s ease-out; }
 
         .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f2f6; padding-bottom: 15px; margin-bottom: 20px; }
         .section-title { font-size: 1.2em; color: #2c3e50; border-bottom: 2px solid #f1f2f6; padding-bottom: 8px; margin-bottom: 20px; font-weight: 600; }
@@ -106,7 +118,7 @@
 
         .option-label { display: block; background: #fff; margin: 10px 0; padding: 15px; border-radius: 10px; cursor: pointer; border: 2px solid #e2e8f0; transition: all 0.2s ease; font-size: 15px; font-weight: 500; color: #334155; }
         .option-label:hover { background: #f8fafc; border-color: #cbd5e1; transform: translateY(-1px); }
-        .quiz-control-bar { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px; }
+        .quiz-control-bar { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
         .timer-display { font-size: 1.4em; font-weight: bold; color: #e74c3c; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px; }
         .pause-screen { text-align: center; padding: 50px 20px; background: #fff; border-radius: 16px; border: 2px dashed #cbd5e1; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
         
@@ -119,9 +131,23 @@
         .rank-1 { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); color: #fff; } 
         .rank-2 { background: linear-gradient(135deg, #e2e2e2 0%, #9f9f9f 100%); color: #fff; } 
         .rank-3 { background: linear-gradient(135deg, #d4a373 0%, #a26a42 100%); color: #fff; } 
+        
+        /* Language Toggle Switch */
+        .lang-toggle { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; padding: 10px; background: #f1f2f6; border-radius: 30px; }
+        .lang-toggle label { cursor: pointer; font-weight: bold; color: #34495e; font-size: 14px; display: flex; align-items: center; gap: 5px; }
+        .lang-toggle input { width: auto; margin: 0; cursor: pointer; }
+
+        /* Admin Bilingual Inputs */
+        .lang-input-group { background: #f8fafc; padding: 10px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
+        .lang-input-group label { display: block; font-size: 12px; font-weight: bold; color: #7f8c8d; margin-bottom: 5px; text-transform: uppercase;}
+        .lang-input-group input { margin: 5px 0 10px 0; }
     </style>
 </head>
 <body>
+
+    <div class="app-banner">
+        Download our app <a id="appBannerLink" href="#" target="_blank">App</a>
+    </div>
 
     <div id="lightboxModal" class="hidden" onclick="closeLightbox()">
         <img id="lightboxImg" src="">
@@ -141,7 +167,7 @@
             <h3 style="color: #e74c3c; margin-top: 0; font-size: 1.5em;">Admin Login</h3>
             <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 20px;">Enter your credentials to manage kd test.</p>
             
-            <input type="text" id="adminIdInput" placeholder="Admin ID (e.g., Sachin)">
+            <input type="text" id="adminIdInput" placeholder="Admin ID (e.g., 9813324253)">
             
             <div class="password-container">
                 <input type="password" id="adminPasswordInput" placeholder="Password">
@@ -196,14 +222,14 @@
         </div>
 
         <div class="tab-container" id="adminTabs">
-            <button class="tab-btn active" onclick="switchAdminTab('adminAnalytics')">Analytics</button>
+            <button class="tab-btn active" onclick="switchAdminTab('adminAnalytics')">Global History</button>
             <button class="tab-btn" onclick="switchAdminTab('adminTestManager')">Manage Tests</button>
             <button class="tab-btn" onclick="switchAdminTab('adminUserManager')">Users</button>
             <button class="tab-btn" onclick="switchAdminTab('adminSettings')">Settings</button>
         </div>
 
         <div id="adminAnalytics" class="admin-view">
-            <h3 class="section-title">Global Test Scores</h3>
+            <h3 class="section-title">All Student Test Records</h3>
             <div id="adminAnalyticsList"></div>
         </div>
 
@@ -222,17 +248,33 @@
             <button class="btn-secondary" style="margin-bottom: 20px; width: auto; font-size: 14px; padding: 8px 15px;" onclick="switchAdminTab('adminTestManager')">← Back to Tests</button>
             <h3 class="section-title" id="editingTestTitle" style="color: #3498db;">Adding Questions to: </h3>
             
-            <input type="text" id="qText" placeholder="Enter your question text...">
+            <div class="lang-input-group">
+                <label>Question Text</label>
+                <input type="text" id="qTextEn" placeholder="In English...">
+                <input type="text" id="qTextHi" placeholder="In Hindi...">
+            </div>
             
             <label style="font-size: 13px; color: #7f8c8d; font-weight: 600; margin-top: 10px; display:block;">Attach Photo (Keep images small):</label>
             <input type="file" id="qImageUpload" accept="image/*">
             <input type="hidden" id="qImageBase64"> 
             <img id="imagePreview" class="responsive-img hidden" src="" alt="Preview">
 
-            <input type="text" id="opt0" placeholder="Option 1">
-            <input type="text" id="opt1" placeholder="Option 2">
-            <input type="text" id="opt2" placeholder="Option 3">
-            <input type="text" id="opt3" placeholder="Option 4">
+            <div class="lang-input-group">
+                <label>Option 1</label>
+                <input type="text" id="opt0En" placeholder="English"><input type="text" id="opt0Hi" placeholder="Hindi">
+            </div>
+            <div class="lang-input-group">
+                <label>Option 2</label>
+                <input type="text" id="opt1En" placeholder="English"><input type="text" id="opt1Hi" placeholder="Hindi">
+            </div>
+            <div class="lang-input-group">
+                <label>Option 3</label>
+                <input type="text" id="opt2En" placeholder="English"><input type="text" id="opt2Hi" placeholder="Hindi">
+            </div>
+            <div class="lang-input-group">
+                <label>Option 4</label>
+                <input type="text" id="opt3En" placeholder="English"><input type="text" id="opt3Hi" placeholder="Hindi">
+            </div>
             
             <label for="correctAnswer" style="display: block; margin-top: 15px; font-weight: 600; color: #2c3e50;">Correct Answer:</label>
             <select id="correctAnswer">
@@ -255,8 +297,13 @@
         </div>
 
         <div id="adminSettings" class="admin-view hidden">
-            <h3 class="section-title">Change Admin Credentials</h3>
-            <input type="text" id="newAdminId" placeholder="New Admin ID (Current: Sachin)">
+            <h3 class="section-title">App Download Link</h3>
+            <input type="text" id="adminAppUrl" placeholder="Enter link for App Download (e.g. Google Drive link)">
+            <button class="btn-admin" onclick="saveAppDownloadUrl()">Update Link</button>
+            <p id="appUrlMsg" class="success-text"></p>
+
+            <h3 class="section-title" style="margin-top: 40px;">Change Admin Credentials</h3>
+            <input type="text" id="newAdminId" placeholder="New Admin ID">
             <input type="password" id="newAdminPass" placeholder="New Password">
             <button class="btn-admin" onclick="updateAdminCredentials()">Update Credentials</button>
             <p id="adminPassMsg" class="success-text"></p>
@@ -270,20 +317,24 @@
 
     <div id="userPanel" class="container hidden">
         <div class="header-bar">
-            <h2 style="margin: 0; color: #2ecc71;">kd test - Student</h2>
+            <h2 style="margin: 0; color: #2ecc71;">kd test - Dashboard</h2>
             <button class="btn-logout" style="width: auto; padding: 8px 18px;" onclick="logout()">Logout</button>
         </div>
         
         <div class="tab-container" id="studentTabs">
-            <button class="tab-btn active" onclick="switchStudentTab('studentTestSelector')">My Tests</button>
+            <button class="tab-btn active" onclick="switchStudentTab('studentTestSelector')">Dashboard</button>
             <button class="tab-btn" onclick="switchStudentTab('studentLeaderboard')">Leaderboards</button>
             <button class="tab-btn" onclick="switchStudentTab('studentSettings')">Settings</button>
         </div>
 
         <div id="studentTestSelector" class="student-view">
             <p id="welcomeMessage" style="color: #34495e; font-size: 1.2em; font-weight: bold; margin-top: 0;"></p>
+            
             <h3 class="section-title">Available Cloud Tests</h3>
             <div id="studentTestList"></div>
+
+            <h3 class="section-title" style="margin-top: 40px;">My Previous Records</h3>
+            <div id="studentHistoryList"></div>
         </div>
 
         <div id="studentLeaderboard" class="student-view hidden">
@@ -311,15 +362,22 @@
                 </div>
             </div>
 
-            <h3 id="activeQuizTitle" class="section-title" style="color: #3498db; margin-top: 0; border: none; padding: 0;"></h3>
+            <h3 id="activeQuizTitle" class="section-title" style="color: #3498db; margin-top: 0; border: none; padding: 0; text-align: center;"></h3>
             
+            <div class="lang-toggle">
+                <label><input type="radio" name="quizLang" value="en" checked onchange="setQuizLanguage('en')"> English</label>
+                <label><input type="radio" name="quizLang" value="hi" onchange="setQuizLanguage('hi')"> Hindi</label>
+            </div>
+
             <div id="pauseScreen" class="pause-screen hidden">
                 <h2 style="color: #2c3e50;">Test Paused</h2>
                 <button class="btn-student" style="width: auto; padding: 12px 25px; font-size: 18px; margin-top: 20px;" onclick="togglePause()">Resume Test</button>
             </div>
 
             <div id="quizContent">
-                <p id="questionDisplay" style="font-size: 1.3em; font-weight: 600; color: #2c3e50;">Loading question...</p>
+                <p id="questionCountText" style="font-size: 13px; color: #7f8c8d; font-weight: bold; margin-bottom: 5px;"></p>
+                <p id="questionDisplay" style="font-size: 1.3em; font-weight: 600; color: #2c3e50; margin-top: 0;">Loading question...</p>
+                
                 <img id="questionImageDisplay" class="responsive-img hidden" src="" alt="Question Image" onclick="openLightbox(this.src)">
                 <p id="enlargeHint" class="hidden" style="text-align: center; font-size: 12px; color: #95a5a6; margin-top: -10px;">(Click image to enlarge)</p>
                 
@@ -336,6 +394,10 @@
             <h2 id="scoreDisplay" style="color: #3498db; font-size: 3em; margin-bottom: 0;"></h2>
             <p id="scorePercentage" style="color: #7f8c8d; font-weight: bold; margin-top: 5px; font-size: 1.2em;"></p>
             <h3 class="section-title" style="margin-top: 40px;">Test Review</h3>
+            <div class="lang-toggle">
+                <label><input type="radio" name="reviewLang" value="en" checked onchange="setReviewLanguage('en')"> English</label>
+                <label><input type="radio" name="reviewLang" value="hi" onchange="setReviewLanguage('hi')"> Hindi</label>
+            </div>
             <div id="reviewList"></div>
             <button class="btn-student" style="margin-top: 30px; padding: 15px;" onclick="switchStudentTab('studentTestSelector')">Return to Dashboard</button>
         </div>
@@ -345,16 +407,15 @@
         // ==========================================
         // 1. FIREBASE CLOUD SETUP 
         // ==========================================
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBDPdbSyP8WD70CCPwbMA9sPtOK9XLejbQ",
-  authDomain: "test2-672e5.firebaseapp.com",
-  projectId: "test2-672e5",
-  storageBucket: "test2-672e5.firebasestorage.app",
-  messagingSenderId: "250226237572",
-  appId: "1:250226237572:web:f88e26d8dfcb4930faa2d1",
-  measurementId: "G-56R9BLZ4SJ"
-};
+        const firebaseConfig = {
+          apiKey: "AIzaSyBDPdbSyP8WD70CCPwbMA9sPtOK9XLejbQ",
+          authDomain: "test2-672e5.firebaseapp.com",
+          projectId: "test2-672e5",
+          storageBucket: "test2-672e5.firebasestorage.app",
+          messagingSenderId: "250226237572",
+          appId: "1:250226237572:web:f88e26d8dfcb4930faa2d1",
+          measurementId: "G-56R9BLZ4SJ"
+        };
 
         let db;
         try {
@@ -374,9 +435,10 @@ const firebaseConfig = {
         let userDatabase = []; 
         let studentScores = []; 
         
-        // NEW: Default Admin Credentials
-        let cloudAdminId = "Sachin"; 
-        let cloudAdminPass = "1234";
+        // NEW ADMIN DEFAULTS
+        let cloudAdminId = "9813324253"; 
+        let cloudAdminPass = "Sachin@123";
+        let appDownloadUrl = "#";
         
         let defaultGuide = "1. Be respectful to others.\n2. Do not cheat on tests.\n3. Admins reserve the right to remove accounts.";
         let appGuidelines = defaultGuide;
@@ -386,7 +448,12 @@ const firebaseConfig = {
 
         let currentUserId = null;
         let activeAdminTestId = null; let editingQuestionIndex = null; 
-        let activeStudentTestId = null; let currentQuestionIndex = 0; let userAnswers = [];
+        
+        let activeStudentTestId = null; 
+        let currentQuestionIndex = 0; 
+        let userAnswers = [];
+        let currentQuizLang = 'en'; // default language
+
         let testTimerInterval; let timeRemainingSeconds = 0; let isPaused = false;
 
         // Sync Listener
@@ -397,13 +464,17 @@ const firebaseConfig = {
                     allTests = data.allTests ? JSON.parse(data.allTests) : [];
                     userDatabase = data.userDatabase ? JSON.parse(data.userDatabase) : [];
                     studentScores = data.studentScores ? JSON.parse(data.studentScores) : [];
-                    cloudAdminId = data.adminId || "Sachin";
-                    cloudAdminPass = data.adminPass || "1234";
+                    cloudAdminId = data.adminId || "9813324253";
+                    cloudAdminPass = data.adminPass || "Sachin@123";
                     appGuidelines = data.guidelines || defaultGuide;
+                    appDownloadUrl = data.appDownloadUrl || "#";
+
+                    // Update Top Banner
+                    document.getElementById('appBannerLink').href = appDownloadUrl;
 
                     if (!document.getElementById('adminTestManager').classList.contains('hidden')) renderAdminTestList();
                     if (!document.getElementById('adminAnalytics').classList.contains('hidden')) renderAdminAnalytics();
-                    if (!document.getElementById('studentTestSelector').classList.contains('hidden')) renderStudentTestList();
+                    if (!document.getElementById('studentTestSelector').classList.contains('hidden')) renderStudentDashboard();
                     if (!document.getElementById('studentLeaderboard').classList.contains('hidden')) renderLeaderboardData();
                 }
             });
@@ -411,38 +482,33 @@ const firebaseConfig = {
 
         function saveData() {
             if (!db) {
-                // Fallback to local storage if firebase isn't set up yet
                 localStorage.setItem('kd_allTests', JSON.stringify(allTests));
                 localStorage.setItem('kd_userDatabase', JSON.stringify(userDatabase));
                 localStorage.setItem('kd_studentScores', JSON.stringify(studentScores));
                 return;
             }
-            
             db.collection("kd_app").doc("global_data").set({
                 allTests: JSON.stringify(allTests),
                 userDatabase: JSON.stringify(userDatabase),
                 studentScores: JSON.stringify(studentScores),
                 adminId: cloudAdminId,
                 adminPass: cloudAdminPass,
-                guidelines: appGuidelines
-            }).catch(error => {
-                console.error("Cloud Error:", error); alert("Error syncing to cloud.");
-            });
+                guidelines: appGuidelines,
+                appDownloadUrl: appDownloadUrl
+            }).catch(error => { console.error("Cloud Error:", error); alert("Error syncing to cloud."); });
         }
 
-        // --- IMAGE & LIGHTBOX CONTROLS ---
+        // --- UTILS & LIGHTBOX ---
         function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightboxModal').classList.remove('hidden'); }
         function closeLightbox() { document.getElementById('lightboxModal').classList.add('hidden'); }
 
         document.getElementById('qImageUpload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) { resetImageUpload(); return; }
+            const file = e.target.files[0]; if (!file) { resetImageUpload(); return; }
             const reader = new FileReader();
             reader.onload = function(event) {
                 const img = new Image();
                 img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 600; 
+                    const canvas = document.createElement('canvas'); const MAX_WIDTH = 600; 
                     let width = img.width; let height = img.height;
                     if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
                     canvas.width = width; canvas.height = height;
@@ -459,11 +525,9 @@ const firebaseConfig = {
         });
 
         function resetImageUpload() { document.getElementById('qImageUpload').value = ""; document.getElementById('qImageBase64').value = ""; document.getElementById('imagePreview').src = ""; document.getElementById('imagePreview').classList.add('hidden'); }
-
-        // --- UTILS ---
         function toggleVisibility(inputId) { const field = document.getElementById(inputId); field.type = field.type === "password" ? "text" : "password"; }
         function openModal(modalId) { document.querySelectorAll('.error-text, .success-text').forEach(el => el.style.display = 'none'); document.getElementById(modalId).classList.remove('hidden'); }
-        function closeModals() { document.querySelectorAll('.modal-overlay').forEach(el => el.classList.add('hidden')); document.querySelectorAll('input[type="password"], input[type="number"], input[type="text"]').forEach(el => { if(el.id !== 'qText' && !el.id.startsWith('opt') && el.id !== 'newAdminId') el.value = ''; }); }
+        function closeModals() { document.querySelectorAll('.modal-overlay').forEach(el => el.classList.add('hidden')); document.querySelectorAll('input[type="password"], input[type="number"], input[type="text"]').forEach(el => { if(!el.id.includes('qText') && !el.id.startsWith('opt') && el.id !== 'newAdminId' && el.id !== 'adminAppUrl') el.value = ''; }); }
         function switchModal(closeId, openId) { document.getElementById(closeId).classList.add('hidden'); openModal(openId); }
         function showSuccess(elementId, msg) { document.getElementById(elementId).innerText = msg; document.getElementById(elementId).style.display = 'block'; setTimeout(() => document.getElementById(elementId).style.display = 'none', 3000); }
 
@@ -475,14 +539,16 @@ const firebaseConfig = {
         function handleFailedAttempt(errorElementId) {
             failedAttempts++;
             if (failedAttempts >= 6) { 
-                lockoutUntil = Date.now() + (24 * 60 * 60 * 1000); 
-                localStorage.setItem('kd_lockoutUntil', lockoutUntil);
+                lockoutUntil = Date.now() + (24 * 60 * 60 * 1000); localStorage.setItem('kd_lockoutUntil', lockoutUntil);
                 document.getElementById(errorElementId).innerText = "Device locked for 24 hours."; 
-            } else { 
-                document.getElementById(errorElementId).innerText = `Incorrect. ${6 - failedAttempts} attempts remaining.`; 
-            }
-            localStorage.setItem('kd_failedAttempts', failedAttempts);
-            document.getElementById(errorElementId).style.display = 'block'; 
+            } else { document.getElementById(errorElementId).innerText = `Incorrect. ${6 - failedAttempts} attempts remaining.`; }
+            localStorage.setItem('kd_failedAttempts', failedAttempts); document.getElementById(errorElementId).style.display = 'block'; 
+        }
+
+        function getTextByLang(textData, lang) {
+            if (typeof textData === 'string') return textData; // Backwards compatibility for old data
+            if (!textData) return "";
+            return textData[lang] || textData['en'] || ""; // Fallback to English
         }
 
         // --- TAB SWITCHERS ---
@@ -497,6 +563,7 @@ const firebaseConfig = {
             if(viewId === 'adminSettings') {
                 document.getElementById('editGuidelinesText').value = appGuidelines;
                 document.getElementById('newAdminId').value = cloudAdminId;
+                document.getElementById('adminAppUrl').value = appDownloadUrl;
             }
         }
 
@@ -506,17 +573,15 @@ const firebaseConfig = {
             document.getElementById(viewId).classList.remove('hidden'); 
             if(event) event.target.classList.add('active'); 
             
-            if(viewId === 'studentTestSelector') renderStudentTestList();
+            if(viewId === 'studentTestSelector') renderStudentDashboard();
             if(viewId === 'studentLeaderboard') populateLeaderboardDropdown();
         }
 
         // --- AUTH & REGISTRATION ---
         function verifyAdmin() {
             const lockMsg = isLockedOut(); if (lockMsg) { document.getElementById('adminError').innerText = lockMsg; return document.getElementById('adminError').style.display = 'block'; }
-            
             const enteredId = document.getElementById('adminIdInput').value.trim();
             const enteredPass = document.getElementById('adminPasswordInput').value;
-
             if (enteredId === cloudAdminId && enteredPass === cloudAdminPass) {
                 failedAttempts = 0; lockoutUntil = 0; localStorage.setItem('kd_failedAttempts', 0); closeModals();
                 document.getElementById('landingPage').classList.add('hidden'); document.getElementById('adminPanel').classList.remove('hidden');
@@ -546,7 +611,7 @@ const firebaseConfig = {
                 failedAttempts = 0; lockoutUntil = 0; localStorage.setItem('kd_failedAttempts', 0);
                 currentUserId = user.id; closeModals();
                 document.getElementById('landingPage').classList.add('hidden'); document.getElementById('userPanel').classList.remove('hidden');
-                document.getElementById('welcomeMessage').innerText = `Welcome back, ${user.name}!`; renderStudentTestList(); 
+                document.getElementById('welcomeMessage').innerText = `Welcome back, ${user.name}!`; renderStudentDashboard(); 
             } else { handleFailedAttempt('loginError'); }
         }
 
@@ -586,15 +651,10 @@ const firebaseConfig = {
             saveData(); document.getElementById('newTestName').value = ''; document.getElementById('newTestTimer').value = ''; renderAdminTestList();
         }
 
-        // NEW: EDIT TEST TIMER LOGIC
         function editTestTimer(testId) {
             const test = allTests.find(t => t.id === testId);
             let newTime = prompt(`Enter new time limit in minutes for "${test.name}" (Enter 0 for No Limit):`, test.timeLimit);
-            if (newTime !== null) {
-                test.timeLimit = parseInt(newTime) || 0;
-                saveData();
-                renderAdminTestList();
-            }
+            if (newTime !== null) { test.timeLimit = parseInt(newTime) || 0; saveData(); renderAdminTestList(); }
         }
 
         function renderAdminTestList() {
@@ -636,10 +696,11 @@ const firebaseConfig = {
             listDiv.innerHTML = '';
             activeTest.questions.forEach((q, i) => {
                 const imgBadge = q.image ? `<span style="font-size:11px; background:#e0eafc; color:#3498db; padding:3px 8px; border-radius:12px; margin-left:8px; font-weight:bold;">🖼️ Image</span>` : "";
+                const previewText = getTextByLang(q.question, 'en');
                 listDiv.innerHTML += `
                     <div class="list-item">
                         <div style="flex-grow: 1; margin-right: 15px; color: #34495e;">
-                            <strong style="color:#3498db;">Q${i+1}:</strong> ${q.question} ${imgBadge}
+                            <strong style="color:#3498db;">Q${i+1}:</strong> ${previewText.substring(0,40)}... ${imgBadge}
                         </div>
                         <div style="display: flex; gap: 5px; min-width: 120px;">
                             <button class="btn-secondary" style="padding: 6px 12px; font-size: 13px;" onclick="editQuestion(${i})">Edit</button>
@@ -651,20 +712,51 @@ const firebaseConfig = {
 
         function editQuestion(i) {
             const q = allTests.find(t => t.id === activeAdminTestId).questions[i];
-            document.getElementById('qText').value = q.question; document.getElementById('opt0').value = q.options[0]; document.getElementById('opt1').value = q.options[1]; document.getElementById('opt2').value = q.options[2]; document.getElementById('opt3').value = q.options[3]; document.getElementById('correctAnswer').value = q.correctIndex;
+            
+            document.getElementById('qTextEn').value = getTextByLang(q.question, 'en');
+            document.getElementById('qTextHi').value = getTextByLang(q.question, 'hi');
+            
+            for(let optIdx=0; optIdx<4; optIdx++) {
+                document.getElementById(`opt${optIdx}En`).value = getTextByLang(q.options[optIdx], 'en');
+                document.getElementById(`opt${optIdx}Hi`).value = getTextByLang(q.options[optIdx], 'hi');
+            }
+
+            document.getElementById('correctAnswer').value = q.correctIndex;
             if (q.image) { document.getElementById('qImageBase64').value = q.image; document.getElementById('imagePreview').src = q.image; document.getElementById('imagePreview').classList.remove('hidden'); } else { resetImageUpload(); }
             editingQuestionIndex = i; document.getElementById('saveQuestionBtn').innerText = "Update Question"; document.getElementById('saveQuestionBtn').classList.replace('btn-admin','btn-student'); document.getElementById('cancelEditBtn').classList.remove('hidden');
         }
-        function cancelEdit() { editingQuestionIndex = null; document.getElementById('saveQuestionBtn').innerText = "Sync to Cloud"; document.getElementById('saveQuestionBtn').classList.replace('btn-student','btn-admin'); document.getElementById('cancelEditBtn').classList.add('hidden'); document.getElementById('qText').value = ''; document.getElementById('opt0').value = ''; document.getElementById('opt1').value = ''; document.getElementById('opt2').value = ''; document.getElementById('opt3').value = ''; document.getElementById('correctAnswer').value = '0'; resetImageUpload(); }
+
+        function cancelEdit() { 
+            editingQuestionIndex = null; document.getElementById('saveQuestionBtn').innerText = "Sync to Cloud"; document.getElementById('saveQuestionBtn').classList.replace('btn-student','btn-admin'); document.getElementById('cancelEditBtn').classList.add('hidden'); 
+            document.getElementById('qTextEn').value = ''; document.getElementById('qTextHi').value = '';
+            for(let optIdx=0; optIdx<4; optIdx++) { document.getElementById(`opt${optIdx}En`).value = ''; document.getElementById(`opt${optIdx}Hi`).value = ''; }
+            document.getElementById('correctAnswer').value = '0'; resetImageUpload(); 
+        }
+
         function deleteQuestion(i) { if(confirm("Delete this question globally?")) { allTests.find(t => t.id === activeAdminTestId).questions.splice(i, 1); saveData(); renderAdminQuestionList(); if(editingQuestionIndex === i) cancelEdit(); } }
         
         function addQuestionToTest() {
-            const q = document.getElementById('qText').value; const options = [document.getElementById('opt0').value, document.getElementById('opt1').value, document.getElementById('opt2').value, document.getElementById('opt3').value]; const ans = document.getElementById('correctAnswer').value;
+            const qEn = document.getElementById('qTextEn').value; const qHi = document.getElementById('qTextHi').value;
+            const options = [];
+            for(let i=0; i<4; i++) {
+                options.push({
+                    en: document.getElementById(`opt${i}En`).value,
+                    hi: document.getElementById(`opt${i}Hi`).value
+                });
+            }
+
+            const ans = document.getElementById('correctAnswer').value;
             const imgData = document.getElementById('qImageBase64').value;
-            if (!q || options.includes("")) return alert("Fill question text and all 4 options!");
+            
+            if (!qEn || options.some(o => o.en === "")) return alert("Please fill at least the English question and all 4 English options!");
             
             const activeTest = allTests.find(t => t.id === activeAdminTestId); 
-            const obj = { question: q, options: options, correctIndex: parseInt(ans), image: imgData };
+            const obj = { 
+                question: { en: qEn, hi: qHi }, 
+                options: options, 
+                correctIndex: parseInt(ans), 
+                image: imgData 
+            };
             
             if (editingQuestionIndex !== null) { activeTest.questions[editingQuestionIndex] = obj; showSuccess('adminMessage', "Updated successfully!"); cancelEdit(); } 
             else { activeTest.questions.push(obj); showSuccess('adminMessage', "Saved to Cloud!"); cancelEdit(); }
@@ -694,21 +786,48 @@ const firebaseConfig = {
             showSuccess('adminPassMsg', "Credentials updated in cloud!"); 
         }
         function saveAdminGuidelines() { appGuidelines = document.getElementById('editGuidelinesText').value; saveData(); showSuccess('guidelineMsg', "Guidelines synced to cloud!"); }
+        function saveAppDownloadUrl() { appDownloadUrl = document.getElementById('adminAppUrl').value.trim(); saveData(); showSuccess('appUrlMsg', "App link updated across all clients!"); }
 
         // --- STUDENT TEST LOGIC ---
-        function renderStudentTestList() {
-            const listDiv = document.getElementById('studentTestList');
+        function renderStudentDashboard() {
+            // Render Tests
+            const testsDiv = document.getElementById('studentTestList');
             const playableTests = allTests.filter(t => t.questions.length > 0);
-            if (playableTests.length === 0) return listDiv.innerHTML = '<p style="color: #95a5a6; font-style: italic; text-align:center;">No tests currently available.</p>';
-            listDiv.innerHTML = ''; 
-            playableTests.forEach(test => {
-                const timeText = (test.timeLimit && test.timeLimit > 0) ? `${test.timeLimit}m` : "No Limit";
-                listDiv.innerHTML += `
-                    <div class="list-item">
-                        <div><strong style="font-size: 1.1em; color:#2c3e50;">${test.name}</strong><br><span style="font-size:12px; color:#7f8c8d; font-weight:600;">⏱️ ${timeText}</span></div>
-                        <button class="btn-student" onclick="startQuiz('${test.id}')">Start Test</button>
-                    </div>`;
-            });
+            if (playableTests.length === 0) { testsDiv.innerHTML = '<p style="color: #95a5a6; font-style: italic; text-align:center;">No tests currently available.</p>'; }
+            else {
+                testsDiv.innerHTML = ''; 
+                playableTests.forEach(test => {
+                    const timeText = (test.timeLimit && test.timeLimit > 0) ? `${test.timeLimit}m` : "No Limit";
+                    testsDiv.innerHTML += `
+                        <div class="list-item">
+                            <div><strong style="font-size: 1.1em; color:#2c3e50;">${test.name}</strong><br><span style="font-size:12px; color:#7f8c8d; font-weight:600;">⏱️ ${timeText}</span></div>
+                            <button class="btn-student" onclick="startQuiz('${test.id}')">Start Test</button>
+                        </div>`;
+                });
+            }
+
+            // Render History
+            const historyDiv = document.getElementById('studentHistoryList');
+            const myScores = studentScores.filter(s => s.studentId === currentUserId).reverse();
+            if (myScores.length === 0) { historyDiv.innerHTML = '<p style="color: #95a5a6; font-style: italic; text-align:center;">You have not taken any tests yet.</p>'; }
+            else {
+                historyDiv.innerHTML = '';
+                myScores.forEach(record => {
+                    const percentage = Math.round((record.score / record.total) * 100);
+                    const color = percentage >= 70 ? '#2ecc71' : '#e74c3c';
+                    historyDiv.innerHTML += `
+                        <div class="list-item" style="border-left: 4px solid ${color};">
+                            <div>
+                                <strong style="color:#2c3e50;">${record.testName}</strong><br>
+                                <span style="font-size:11px; color:#7f8c8d;">${record.date}</span>
+                            </div>
+                            <div style="text-align: right; font-weight: bold; color: ${color};">
+                                ${percentage}%<br>
+                                <span style="font-size: 11px; color:#7f8c8d;">${record.score}/${record.total} Correct</span>
+                            </div>
+                        </div>`;
+                });
+            }
         }
 
         function populateLeaderboardDropdown() {
@@ -750,7 +869,16 @@ const firebaseConfig = {
             currentQuestionIndex = 0; userAnswers = new Array(activeTest.questions.length).fill(null); isPaused = false;
             document.getElementById('pauseScreen').classList.add('hidden'); document.getElementById('quizContent').classList.remove('hidden'); document.getElementById('pauseBtn').innerText = "Pause";
             document.querySelectorAll('.student-view').forEach(el => el.classList.add('hidden')); document.getElementById('quizContainer').classList.remove('hidden'); document.getElementById('activeQuizTitle').innerText = `${activeTest.name}`;
+            
+            // reset language UI
+            document.querySelector('input[name="quizLang"][value="en"]').checked = true; currentQuizLang = 'en';
+            
             renderQuestion(); startTimer(activeTest.timeLimit);
+        }
+
+        function setQuizLanguage(lang) {
+            currentQuizLang = lang;
+            renderQuestion(); // Re-render the UI with new lang
         }
 
         function startTimer(minutes) {
@@ -770,19 +898,29 @@ const firebaseConfig = {
 
         function renderQuestion() {
             const activeTest = allTests.find(t => t.id === activeStudentTestId); const currentQ = activeTest.questions[currentQuestionIndex];
-            document.getElementById('questionDisplay').innerText = `Q${currentQuestionIndex + 1} of ${activeTest.questions.length}: ${currentQ.question}`;
+            
+            document.getElementById('questionCountText').innerText = `Question ${currentQuestionIndex + 1} of ${activeTest.questions.length}`;
+            
+            // Get proper language string, fallback if empty
+            let displayText = getTextByLang(currentQ.question, currentQuizLang);
+            if (!displayText) displayText = getTextByLang(currentQ.question, 'en'); // forced fallback
+            document.getElementById('questionDisplay').innerText = displayText;
             
             const imgDisplay = document.getElementById('questionImageDisplay'); const hintDisplay = document.getElementById('enlargeHint');
             if (currentQ.image && currentQ.image !== "") { imgDisplay.src = currentQ.image; imgDisplay.classList.remove('hidden'); hintDisplay.classList.remove('hidden'); } 
             else { imgDisplay.src = ""; imgDisplay.classList.add('hidden'); hintDisplay.classList.add('hidden'); }
 
             const optionsDiv = document.getElementById('optionsDisplay'); optionsDiv.innerHTML = ""; 
-            currentQ.options.forEach((opt, index) => {
+            currentQ.options.forEach((optData, index) => {
                 const isChecked = userAnswers[currentQuestionIndex] === index ? "checked" : "";
-                // Adding a specific style trick for checked labels
                 const labelStyle = isChecked ? "border-color: #3498db; background-color: #f4f9fcf0;" : "";
-                optionsDiv.innerHTML += `<label class="option-label" style="${labelStyle}"><input type="radio" name="quizOption" value="${index}" ${isChecked} onchange="userAnswers[${currentQuestionIndex}] = ${index}; renderQuestion();"> ${opt}</label>`;
+                
+                let optText = getTextByLang(optData, currentQuizLang);
+                if (!optText) optText = getTextByLang(optData, 'en');
+
+                optionsDiv.innerHTML += `<label class="option-label" style="${labelStyle}"><input type="radio" name="quizOption" value="${index}" ${isChecked} onchange="userAnswers[${currentQuestionIndex}] = ${index}; renderQuestion();"> ${optText}</label>`;
             });
+            
             document.getElementById('prevBtn').disabled = currentQuestionIndex === 0;
             if (currentQuestionIndex === activeTest.questions.length - 1) { document.getElementById('nextBtn').innerText = "Finish Test"; document.getElementById('nextBtn').classList.replace('btn-student', 'btn-admin'); } 
             else { document.getElementById('nextBtn').innerText = "Next"; document.getElementById('nextBtn').classList.replace('btn-admin', 'btn-student'); }
@@ -812,6 +950,14 @@ const firebaseConfig = {
             document.getElementById('quizContainer').classList.add('hidden'); document.getElementById('resultContainer').classList.remove('hidden');
             document.getElementById('scoreDisplay').innerText = `${correctCount} / ${activeTest.questions.length}`;
             const percentage = Math.round((correctCount / activeTest.questions.length) * 100); document.getElementById('scorePercentage').innerText = `${percentage}% Accuracy`;
+            
+            document.querySelector('input[name="reviewLang"][value="en"]').checked = true; currentQuizLang = 'en';
+            buildReviewUI(activeTest);
+        }
+
+        function setReviewLanguage(lang) {
+            currentQuizLang = lang;
+            const activeTest = allTests.find(t => t.id === activeStudentTestId);
             buildReviewUI(activeTest);
         }
 
@@ -819,13 +965,19 @@ const firebaseConfig = {
             const listDiv = document.getElementById('reviewList'); listDiv.innerHTML = '';
             test.questions.forEach((q, qIndex) => {
                 const userAns = userAnswers[qIndex]; const actualAns = q.correctIndex; const isCorrect = userAns === actualAns;
-                let html = `<div class="review-card"><p style="font-weight:bold; margin-top:0; color:#2c3e50;">${isCorrect ? "✅" : "❌"} Q${qIndex + 1}: ${q.question}</p>`;
+                
+                let qText = getTextByLang(q.question, currentQuizLang) || getTextByLang(q.question, 'en');
+                
+                let html = `<div class="review-card"><p style="font-weight:bold; margin-top:0; color:#2c3e50;">${isCorrect ? "✅" : "❌"} Q${qIndex + 1}: ${qText}</p>`;
                 if(q.image) html += `<img src="${q.image}" class="responsive-img" style="max-height: 100px; display: block; margin: 10px 0; border-radius: 4px; cursor:zoom-in;" onclick="openLightbox(this.src)">`;
-                q.options.forEach((opt, optIndex) => {
+                
+                q.options.forEach((optData, optIndex) => {
+                    let optText = getTextByLang(optData, currentQuizLang) || getTextByLang(optData, 'en');
                     let c = 'review-option'; let s = "";
                     if (optIndex === actualAns) { c += ' review-correct'; s = " (Correct Answer)"; } else if (optIndex === userAns) { c += ' review-wrong'; s = " (Your Answer)"; }
-                    html += `<div class="${c}">${opt}${s}</div>`;
+                    html += `<div class="${c}">${optText}${s}</div>`;
                 });
+                
                 if (userAns === null) html += `<p style="color:#e74c3c; font-weight:bold; font-size:13px; margin-top:10px;">You left this blank.</p>`;
                 listDiv.innerHTML += html + `</div>`;
             });
