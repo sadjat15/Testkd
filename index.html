@@ -414,63 +414,107 @@
     </div>
 
     <script>
-        // --- 1. CONFIG ---
-        const firebaseConfig = {
-          apiKey: "AIzaSyBDPdbSyP8WD70CCPwbMA9sPtOK9XLejbQ",
-          authDomain: "test2-672e5.firebaseapp.com",
-          projectId: "test2-672e5",
-          storageBucket: "test2-672e5.firebasestorage.app",
-          messagingSenderId: "250226237572",
-          appId: "1:250226237572:web:f88e26d8dfcb4930faa2d1"
-        };
+        
+// --- 1. CONFIG & DATA LOAD ---
+const firebaseConfig = {
+    apiKey: "AIzaSyBDPdbSyP8WD70CCPwbMA9sPtOK9XLejbQ",
+    authDomain: "test2-672e5.firebaseapp.com",
+    projectId: "test2-672e5",
+    storageBucket: "test2-672e5.firebasestorage.app",
+    messagingSenderId: "250226237572",
+    appId: "1:250226237572:web:f88e26d8dfcb4930faa2d1"
+};
 
-        let db;
-        try {
-            firebase.initializeApp(firebaseConfig); db = firebase.firestore();
-            document.getElementById('cloudStatus').innerText = "✅ Connected to Cloud";
-            document.getElementById('cloudStatus').style.color = "#10b981";
-            document.getElementById('cloudStatus').style.background = "#ecfdf5";
-        } catch (error) { document.getElementById('cloudStatus').innerText = "⚠️ Saving locally."; }
+let db;
+let isDataLoaded = false; // NEW: Prevents accidental overwrites before cloud sync
 
-        // --- 2. GLOBAL DATA ---
-        let allTests = []; let userDatabase = []; let studentScores = []; 
-        let cloudAdminId = "9813324253"; let cloudAdminPass = "Sachin@123";
-        let appDownloadUrl = "#"; 
-        let storedGeminiKey = "AIzaSyCNkFzxsY3G1dW_MczfkbkuoA3nZhuPgsA"; 
-        let appGuidelines = "1. Be respectful.\n2. Do not cheat.";
-        let currentUserId = null; let activeAdminTestId = null; let editingQuestionIndex = null; 
-        let activeStudentTestId = null; let currentQuestionIndex = 0; let userAnswers = [];
-        let currentQuizLang = 'en'; let testTimerInterval; let timeRemainingSeconds = 0; let isPaused = false;
+// --- 2. GLOBAL DATA ---
+let allTests = []; let userDatabase = []; let studentScores = []; 
+let cloudAdminId = "9813324253"; let cloudAdminPass = "Sachin@123";
+let appDownloadUrl = "#"; 
+let storedGeminiKey = "AIzaSyCNkFzxsY3G1dW_MczfkbkuoA3nZhuPgsA"; 
+let appGuidelines = "1. Be respectful.\n2. Do not cheat.";
+let currentUserId = null; let activeAdminTestId = null; let editingQuestionIndex = null; 
+let activeStudentTestId = null; let currentQuestionIndex = 0; let userAnswers = [];
+let currentQuizLang = 'en'; let testTimerInterval; let timeRemainingSeconds = 0; let isPaused = false;
 
-        if (db) {
-            db.collection("kd_app").doc("global_data").onSnapshot((doc) => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    allTests = data.allTests ? JSON.parse(data.allTests) : [];
-                    userDatabase = data.userDatabase ? JSON.parse(data.userDatabase) : [];
-                    studentScores = data.studentScores ? JSON.parse(data.studentScores) : [];
-                    cloudAdminId = data.adminId || "9813324253"; cloudAdminPass = data.adminPass || "Sachin@123";
-                    appGuidelines = data.guidelines || appGuidelines; appDownloadUrl = data.appDownloadUrl || "#";
-                    storedGeminiKey = data.geminiKey || "AIzaSyCNkFzxsY3G1dW_MczfkbkuoA3nZhuPgsA"; 
+// NEW: Safety Net - Load from Local Storage immediately so the app isn't empty
+try {
+    const localBackup = localStorage.getItem("kd_app_backup");
+    if (localBackup) {
+        const data = JSON.parse(localBackup);
+        allTests = data.allTests ? JSON.parse(data.allTests) : [];
+        userDatabase = data.userDatabase ? JSON.parse(data.userDatabase) : [];
+        studentScores = data.studentScores ? JSON.parse(data.studentScores) : [];
+        cloudAdminId = data.adminId || "9813324253"; 
+        cloudAdminPass = data.adminPass || "Sachin@123";
+        appGuidelines = data.guidelines || appGuidelines; 
+        appDownloadUrl = data.appDownloadUrl || "#";
+        storedGeminiKey = data.geminiKey || storedGeminiKey;
+        isDataLoaded = true; // Safe to save locally
+    }
+} catch(e) { console.warn("No local backup found."); }
 
-                    document.getElementById('appBannerLink').href = appDownloadUrl;
-                    updateGroupDatalist();
+try {
+    firebase.initializeApp(firebaseConfig); 
+    db = firebase.firestore();
+    document.getElementById('cloudStatus').innerText = "✅ Connected to Cloud";
+    document.getElementById('cloudStatus').style.color = "#10b981";
+    document.getElementById('cloudStatus').style.background = "#ecfdf5";
 
-                    if (!document.getElementById('adminTestManager').classList.contains('hidden')) renderAdminTestList();
-                    if (!document.getElementById('adminAnalytics').classList.contains('hidden')) renderAdminAnalytics();
-                    if (!document.getElementById('studentTestSelector').classList.contains('hidden')) renderStudentDashboard();
-                }
-            });
+    // Listen for live updates
+    db.collection("kd_app").doc("global_data").onSnapshot((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            allTests = data.allTests ? JSON.parse(data.allTests) : [];
+            userDatabase = data.userDatabase ? JSON.parse(data.userDatabase) : [];
+            studentScores = data.studentScores ? JSON.parse(data.studentScores) : [];
+            cloudAdminId = data.adminId || "9813324253"; 
+            cloudAdminPass = data.adminPass || "Sachin@123";
+            appGuidelines = data.guidelines || appGuidelines; 
+            appDownloadUrl = data.appDownloadUrl || "#";
+            storedGeminiKey = data.geminiKey || storedGeminiKey;
+
+            document.getElementById('appBannerLink').href = appDownloadUrl;
+            updateGroupDatalist();
+
+            if (!document.getElementById('adminTestManager').classList.contains('hidden')) renderAdminTestList();
+            if (!document.getElementById('adminAnalytics').classList.contains('hidden')) renderAdminAnalytics();
+            if (!document.getElementById('studentTestSelector').classList.contains('hidden')) renderStudentDashboard();
         }
+        
+        isDataLoaded = true; // Cloud has finished syncing
+        
+    }, (error) => {
+        console.error("Firebase Security Error:", error);
+        document.getElementById('cloudStatus').innerText = "⚠️ Cloud Blocked. Using Local Data.";
+        document.getElementById('cloudStatus').style.color = "#ef4444";
+    });
 
-        function saveData() {
-            if (!db) return;
-            db.collection("kd_app").doc("global_data").set({
-                allTests: JSON.stringify(allTests), userDatabase: JSON.stringify(userDatabase),
-                studentScores: JSON.stringify(studentScores), adminId: cloudAdminId, adminPass: cloudAdminPass,
-                guidelines: appGuidelines, appDownloadUrl: appDownloadUrl, geminiKey: storedGeminiKey
-            });
-        }
+} catch (error) { 
+    document.getElementById('cloudStatus').innerText = "⚠️ Saving locally."; 
+}
+
+function saveData() {
+    const payload = {
+        allTests: JSON.stringify(allTests), userDatabase: JSON.stringify(userDatabase),
+        studentScores: JSON.stringify(studentScores), adminId: cloudAdminId, adminPass: cloudAdminPass,
+        guidelines: appGuidelines, appDownloadUrl: appDownloadUrl, geminiKey: storedGeminiKey
+    };
+
+    // 1. ALWAYS save to local browser storage first as a backup
+    localStorage.setItem("kd_app_backup", JSON.stringify(payload));
+
+    // 2. Prevent overwriting the cloud if the cloud hasn't loaded your data yet!
+    if (!db || !isDataLoaded) return;
+
+    // 3. Save to cloud with error tracking
+    db.collection("kd_app").doc("global_data").set(payload)
+      .catch(error => {
+          console.error("Cloud Save Error:", error);
+          alert("Could not save to cloud! Check your Firebase Security Rules.");
+      });
+}
 
         // --- 3. UTILS & AUTH ---
         function toggleVisibility(id) { const f = document.getElementById(id); f.type = f.type === "password" ? "text" : "password"; }
