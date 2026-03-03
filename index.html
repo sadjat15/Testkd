@@ -976,11 +976,60 @@ function renderStudentDashboard() {
     });
 }
 
+// --- SAVE & RESUME LOGIC ---
+let pendingStartTestId = null; 
+
+function saveLocalTestState() {
+    if(!activeStudentTestId || !currentUserId) return;
+    const state = {
+        answers: userAnswers,
+        marked: markedForReview,
+        timeRemaining: timeRemainingSeconds,
+        currentIndex: currentQuestionIndex,
+        startTime: currentTestStartTime
+    };
+    localStorage.setItem(`kd_test_state_${currentUserId}_${activeStudentTestId}`, JSON.stringify(state));
+}
+
 function startQuiz(id) { 
-    activeStudentTestId=id; currentQuestionIndex=0; const t=allTests.find(t=>t.id===id); 
-    userAnswers=new Array(t.questions.length).fill(null); 
-    markedForReview=new Array(t.questions.length).fill(false); 
-    currentTestStartTime = Date.now(); 
+    const savedState = localStorage.getItem(`kd_test_state_${currentUserId}_${id}`);
+    if (savedState) {
+        pendingStartTestId = id;
+        document.getElementById('resumeTestModal').classList.remove('hidden');
+    } else {
+        initTestSession(id, false); 
+    }
+}
+
+function startFreshTest() {
+    document.getElementById('resumeTestModal').classList.add('hidden');
+    localStorage.removeItem(`kd_test_state_${currentUserId}_${pendingStartTestId}`); // Clear old save
+    initTestSession(pendingStartTestId, false);
+}
+
+function resumeSavedTest() {
+    document.getElementById('resumeTestModal').classList.add('hidden');
+    initTestSession(pendingStartTestId, true);
+}
+
+function initTestSession(id, isResume) {
+    activeStudentTestId = id; 
+    const t = allTests.find(t=>t.id===id); 
+    
+    if (isResume) {
+        const savedState = JSON.parse(localStorage.getItem(`kd_test_state_${currentUserId}_${id}`));
+        userAnswers = savedState.answers;
+        markedForReview = savedState.marked || new Array(t.questions.length).fill(false);
+        currentQuestionIndex = savedState.currentIndex || 0;
+        timeRemainingSeconds = savedState.timeRemaining;
+        currentTestStartTime = savedState.startTime || Date.now();
+    } else {
+        userAnswers = new Array(t.questions.length).fill(null); 
+        markedForReview = new Array(t.questions.length).fill(false); 
+        currentQuestionIndex = 0; 
+        currentTestStartTime = Date.now(); 
+        timeRemainingSeconds = t.timeLimit ? t.timeLimit * 60 : 0;
+    }
     
     document.querySelectorAll('.student-view').forEach(e=>e.classList.add('hidden')); 
     document.getElementById('quizContainer').classList.remove('hidden'); 
@@ -988,8 +1037,11 @@ function startQuiz(id) {
     document.getElementById('pauseScreen').classList.add('hidden'); 
     document.getElementById('quizContent').classList.remove('hidden'); 
     pushStateToHistory('takingTest');
-    isPaused=false; renderQuestion(); startTimer(t.timeLimit); 
+    isPaused=false; 
+    renderQuestion(); 
+    startTimer(t.timeLimit, isResume); // Pass the resume flag to the timer
 }
+
 
 function renderQuestionPalette() {
     const pal = document.getElementById('questionPalette'); pal.innerHTML = '';
