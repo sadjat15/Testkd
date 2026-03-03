@@ -6,7 +6,23 @@
     <title>kd test - Cloud App</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js">// In verifyAdmin() update the pushState:
+pushStateToHistory('adminDashboard');
+
+// In verifyStudent() update the pushState:
+pushStateToHistory('studentDashboard');
+
+// In openTestEditor() add a pushState to track entering the editor:
+function openTestEditor(id) { 
+    activeAdminTestId = id; 
+    document.getElementById('editingTestTitle').innerText = `Editing: ${allTests.find(t=>t.id===id).name}`; 
+    document.querySelectorAll('.admin-view').forEach(el=>el.classList.add('hidden')); 
+    document.getElementById('adminQuestionEditor').classList.remove('hidden'); 
+    cancelEdit(); 
+    renderAdminQuestionList(); 
+    pushStateToHistory('adminEditor'); // <-- Add this
+}
+</script>
 
     <style>
         .btn-back { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease; margin: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
@@ -479,64 +495,104 @@ async function saveData() {
 
 // --- 3. UTILS & AUTH ---
 // BACK BUTTON LOGIC
+
+// Universal UI trigger for Back actions
+function goBackUI() {
+    history.back(); // This naturally triggers the popstate event
+}
+
 function pushStateToHistory(stateName) {
-    currentState = stateName;
-    history.pushState({ view: stateName }, stateName, `#${stateName}`);
+    if (currentState !== stateName) {
+        currentState = stateName;
+        history.pushState({ view: stateName }, stateName, `#${stateName}`);
+    }
+}
+
+// Safely close visuals without altering history stack manually
+function closeModalsVisualOnly() {
+    document.querySelectorAll('.modal-overlay').forEach(el => el.classList.add('hidden'));
+}
+
+function closeModals() {
+    closeModalsVisualOnly();
+    if(currentState === 'modalOpen') history.back();
 }
 
 window.addEventListener('popstate', (event) => {
-    // Prevent default reload behavior
+    closeModalsVisualOnly(); // Always close modals on a back action
     
     if (event.state && event.state.view) {
-        const view = event.state.view;
-        handleNavigation(view);
+        currentState = event.state.view;
+        handleNavigation(event.state.view);
     } else {
-        // Fallback or initial state
+        currentState = 'landing';
         handleNavigation('landing');
     }
 });
 
 function handleNavigation(view) {
-    closeModals(); // Always close modals on back
-    
+    // Hide all main containers first to reset the view
+    document.getElementById('landingPage').classList.add('hidden');
+    document.getElementById('adminPanel').classList.add('hidden');
+    document.getElementById('userPanel').classList.add('hidden');
+    document.getElementById('quizContainer').classList.add('hidden');
+    document.getElementById('resultContainer').classList.add('hidden');
+
     switch (view) {
         case 'landing':
-            if (currentUserId) {
-                 // If logged in as student and we try to go back to landing, log out or stay on dashboard
-                 // Let's keep them on dashboard for better UX, or log them out if you prefer.
-                 // logout(); 
-                 document.getElementById('userPanel').classList.remove('hidden');
-                 document.getElementById('landingPage').classList.add('hidden');
-            } else if (!document.getElementById('adminPanel').classList.contains('hidden')) {
-                // If admin is logged in
+            if (currentUserId || !document.getElementById('adminPanel').classList.contains('hidden')) {
+                // Prevent backing out to the landing page if logged in. Push them forward again!
+                history.forward();
+                // Ensure their dashboard remains visible
+                if (currentUserId) document.getElementById('userPanel').classList.remove('hidden');
+                else document.getElementById('adminPanel').classList.remove('hidden');
             } else {
-                logout(); // Ensure we are actually logged out visually
+                logout(); // Ensure variables are cleared
+                document.getElementById('landingPage').classList.remove('hidden');
             }
             break;
+            
         case 'adminDashboard':
-             if (!document.getElementById('adminPanel').classList.contains('hidden')) {
-                  switchAdminTab('adminAnalytics');
-             }
+             document.getElementById('adminPanel').classList.remove('hidden');
+             switchAdminTab('adminAnalytics');
              break;
+             
+        case 'adminEditor':
+             document.getElementById('adminPanel').classList.remove('hidden');
+             switchAdminTab('adminQuestionEditor');
+             break;
+             
         case 'studentDashboard':
             if (currentUserId) {
+                document.getElementById('userPanel').classList.remove('hidden');
                 switchStudentTab('studentTestSelector');
-                document.getElementById('quizContainer').classList.add('hidden');
-                document.getElementById('resultContainer').classList.add('hidden');
-                if(testTimerInterval) clearInterval(testTimerInterval); // Stop timer if we back out
+                if(testTimerInterval) clearInterval(testTimerInterval); // Stop timer if exiting test
+            } else {
+                history.replaceState({view: 'landing'}, '', '#landing');
+                document.getElementById('landingPage').classList.remove('hidden');
             }
             break;
+            
         case 'takingTest':
-             // It's tricky to handle back button *during* a test. Usually, you prompt.
-             if (!document.getElementById('quizContainer').classList.contains('hidden')) {
-                 if (confirm("Are you sure you want to leave the test? Progress will be lost.")) {
-                     switchStudentTab('studentTestSelector');
-                     document.getElementById('quizContainer').classList.add('hidden');
-                 } else {
-                     // Stay on test, push state again to "trap" them
-                     history.pushState({ view: 'takingTest' }, '', '#takingTest');
-                 }
+             if (!document.getElementById('resultContainer').classList.contains('hidden')) {
+                 // Prevent going "back" into a test from the results screen
+                 history.forward();
+                 document.getElementById('resultContainer').classList.remove('hidden');
+             } else if (confirm("Are you sure you want to leave the test? Progress will be lost.")) {
+                 document.getElementById('userPanel').classList.remove('hidden');
+                 switchStudentTab('studentTestSelector');
+                 if(testTimerInterval) clearInterval(testTimerInterval);
+             } else {
+                 // Trap them back in the test state
+                 history.pushState({ view: 'takingTest' }, '', '#takingTest');
+                 document.getElementById('userPanel').classList.remove('hidden');
+                 document.getElementById('quizContainer').classList.remove('hidden');
              }
+             break;
+             
+        case 'testResults':
+             document.getElementById('userPanel').classList.remove('hidden');
+             document.getElementById('resultContainer').classList.remove('hidden');
              break;
     }
 }
