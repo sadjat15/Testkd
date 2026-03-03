@@ -255,6 +255,27 @@ function openTestEditor(id) {
             <button class="btn-student" style="margin-top: 15px;" onclick="importSelectedQuestions()">Import Selected Questions</button>
         </div>
     </div>
+    <div id="exitTestModal" class="modal-overlay hidden" style="z-index: 4000;">
+        <div class="modal-box" style="width: 320px;">
+            <h3 style="color: #ef4444; margin-top: 0;">Leave Test?</h3>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Are you sure you want to leave? All your current progress will be lost.</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn-secondary" style="width: auto; margin: 0;" onclick="cancelExitTest()">Stay</button>
+                <button class="btn-admin" style="width: auto; margin: 0;" onclick="confirmExitTest()">Leave Test</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="submitTestModal" class="modal-overlay hidden" style="z-index: 4000;">
+        <div class="modal-box" style="width: 320px;">
+            <h3 style="color: #3b82f6; margin-top: 0;">Submit Test?</h3>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Are you sure you are ready to submit your answers?</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn-secondary" style="width: auto; margin: 0;" onclick="cancelSubmitTest()">Cancel</button>
+                <button class="btn-student" style="width: auto; margin: 0;" onclick="confirmSubmitTest()">Submit Now</button>
+            </div>
+        </div>
+    </div>
 
     <div id="adminPanel" class="container hidden">
         <div class="header-bar"><h2 style="margin: 0; color: #ef4444;">Admin Dashboard</h2><button class="btn-logout" style="width: auto; padding: 8px 18px;" onclick="logout()">Logout</button></div>
