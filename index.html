@@ -128,7 +128,6 @@
         .responsive-img { max-width: 100%; max-height: 250px; border-radius: 8px; margin: 15px auto; display: block; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: zoom-in; }
         #lightboxModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; cursor: zoom-out; }
 
-        /* --- NEW: QUESTION PALETTE & DETAILED RESULTS CSS --- */
         .palette-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; max-height: 150px; overflow-y: auto; justify-content: center;}
         .palette-btn { width: 38px; height: 38px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.2s; margin: 0; padding: 0;}
         .pal-unanswered { background: #e2e8f0; color: #475569; }
@@ -142,6 +141,9 @@
         .stat-card h4 { margin: 0 0 5px 0; color: #64748b; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;}
         .stat-card div { font-size: 28px; font-weight: 800; }
         @media(min-width: 600px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+        
+        /* Progress Stat Items */
+        .progress-stat { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; margin-right: 5px; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -166,6 +168,7 @@
             <button class="btn-admin" onclick="verifyAdmin()">Access Dashboard</button><button class="btn-secondary" style="margin-top: 10px;" onclick="closeModals()">Cancel</button>
         </div>
     </div>
+    
     <div id="studentLoginModal" class="modal-overlay hidden">
         <div class="modal-box">
             <h3 style="color: #10b981; margin-top: 0;">Student Login</h3>
@@ -176,6 +179,7 @@
             <span class="text-link" onclick="openRegistration()">Create Account</span>
         </div>
     </div>
+
     <div id="registerModal" class="modal-overlay hidden">
         <div class="modal-box" style="width: 400px;">
             <h3 style="color: #3b82f6; margin-top: 0;">Create Account</h3>
@@ -185,6 +189,13 @@
             <label style="display:flex; align-items:center; gap:10px; font-size:14px; margin-bottom: 15px; cursor: pointer;"><input type="checkbox" id="acceptGuidelines" onchange="toggleRegButton()" style="width: 18px; height: 18px; margin:0;"> I accept the rules.</label>
             <p id="regError" class="error-text"></p>
             <button id="regSubmitBtn" class="btn-student" onclick="registerStudent()" disabled>Create Account</button><button class="btn-secondary" style="margin-top: 10px;" onclick="switchModal('registerModal', 'studentLoginModal')">Back</button>
+        </div>
+    </div>
+
+    <div id="adminProgressModal" class="modal-overlay hidden">
+        <div class="modal-box" style="width: 600px; max-width: 95vw; max-height: 85vh;">
+            <div class="header-bar"><h3 style="color: #3b82f6; margin: 0;">Student Test Report</h3><button class="btn-logout" style="width:auto; padding: 5px 10px;" onclick="closeModals()">Close</button></div>
+            <div id="adminProgressContent" style="text-align: left;"></div>
         </div>
     </div>
 
@@ -199,7 +210,9 @@
 
         <div id="adminAnalytics" class="admin-view">
             <h3 class="section-title">All Student Records</h3>
-            <div class="list-item grid-row" style="background: #f8fafc; border: none; font-weight: bold; color: #64748b; padding: 10px 20px; margin-bottom: 5px;"><div>Student</div><div>Test Taken</div><div style="text-align: right;">Score</div></div>
+            <div class="list-item" style="display: grid; grid-template-columns: 2fr 2fr 2fr auto; gap: 10px; background: #f8fafc; border: none; font-weight: bold; color: #64748b; padding: 10px 20px; margin-bottom: 5px;">
+                <div>Student</div><div>Test Taken</div><div>Stats</div><div style="text-align: right;">Action</div>
+            </div>
             <div id="adminAnalyticsList"></div>
         </div>
 
@@ -359,7 +372,7 @@ let allTests = []; let userDatabase = []; let studentScores = [];
 let cloudAdminId = "9813324253"; let cloudAdminPass = "Sachin@123";
 let appDownloadUrl = "#"; let storedGeminiKey = "AIzaSyCNkFzxsY3G1dW_MczfkbkuoA3nZhuPgsA"; let appGuidelines = "1. Be respectful.\n2. Do not cheat.";
 let currentUserId = null; let activeAdminTestId = null; let editingQuestionIndex = null; 
-let activeStudentTestId = null; let currentQuestionIndex = 0; let userAnswers = []; let markedForReview = []; // NEW: Tracking marks
+let activeStudentTestId = null; let currentQuestionIndex = 0; let userAnswers = []; let markedForReview = []; 
 let currentQuizLang = 'en'; let testTimerInterval; let timeRemainingSeconds = 0; let isPaused = false;
 
 try {
@@ -375,25 +388,47 @@ try {
 try {
     firebase.initializeApp(firebaseConfig); db = firebase.firestore();
     document.getElementById('cloudStatus').innerText = "✅ Connected to Cloud"; document.getElementById('cloudStatus').style.color = "#10b981"; document.getElementById('cloudStatus').style.background = "#ecfdf5";
+    
+    // Real-time listener: Auto-updates UI when ANY device makes a change.
     db.collection("kd_app").doc("global_data").onSnapshot((doc) => {
         if (doc.exists) {
             const data = doc.data();
             allTests = data.allTests ? JSON.parse(data.allTests) : []; userDatabase = data.userDatabase ? JSON.parse(data.userDatabase) : []; studentScores = data.studentScores ? JSON.parse(data.studentScores) : [];
             cloudAdminId = data.adminId || "9813324253"; cloudAdminPass = data.adminPass || "Sachin@123"; appGuidelines = data.guidelines || appGuidelines; appDownloadUrl = data.appDownloadUrl || "#"; storedGeminiKey = data.geminiKey || storedGeminiKey;
             document.getElementById('appBannerLink').href = appDownloadUrl; updateGroupDatalist();
+            
+            // Refresh views if they are open
             if (!document.getElementById('adminTestManager').classList.contains('hidden')) renderAdminTestList();
             if (!document.getElementById('adminAnalytics').classList.contains('hidden')) renderAdminAnalytics();
             if (!document.getElementById('studentTestSelector').classList.contains('hidden')) renderStudentDashboard();
         }
-        isDataLoaded = true; 
+        isDataLoaded = true; // IMPORTANT: Lock opens only after initial sync
     });
 } catch (error) { document.getElementById('cloudStatus').innerText = "⚠️ Saving locally."; }
 
-function saveData() {
-    const payload = { allTests: JSON.stringify(allTests), userDatabase: JSON.stringify(userDatabase), studentScores: JSON.stringify(studentScores), adminId: cloudAdminId, adminPass: cloudAdminPass, guidelines: appGuidelines, appDownloadUrl: appDownloadUrl, geminiKey: storedGeminiKey };
+async function saveData() {
+    // SECURITY FIX: Prevent multi-device data wipe on fresh login
+    if (!isDataLoaded) {
+        console.warn("Attempted to save before data was fully loaded. Save aborted to prevent data loss.");
+        return; 
+    }
+
+    const payload = { 
+        allTests: JSON.stringify(allTests), 
+        userDatabase: JSON.stringify(userDatabase), 
+        studentScores: JSON.stringify(studentScores), 
+        adminId: cloudAdminId, adminPass: cloudAdminPass, guidelines: appGuidelines, appDownloadUrl: appDownloadUrl, geminiKey: storedGeminiKey 
+    };
+    
     localStorage.setItem("kd_app_backup", JSON.stringify(payload));
-    if (!db || !isDataLoaded) return;
-    db.collection("kd_app").doc("global_data").set(payload).catch(error => { console.error("Cloud Save Error"); });
+    
+    if (!db) return;
+    try {
+        // Use merge/update to ensure we don't accidentally blow away the whole document structure
+        await db.collection("kd_app").doc("global_data").set(payload, { merge: true });
+    } catch (error) { 
+        console.error("Cloud Save Error:", error); 
+    }
 }
 
 // --- 3. UTILS & AUTH ---
@@ -427,7 +462,7 @@ function switchAdminTab(vId) { document.querySelectorAll('#adminPanel .admin-vie
 function switchStudentTab(vId) { document.querySelectorAll('#userPanel .student-view').forEach(el=>el.classList.add('hidden')); document.querySelectorAll('#studentTabs .tab-btn').forEach(el=>el.classList.remove('active')); document.getElementById(vId).classList.remove('hidden'); if(event) event.target.classList.add('active'); if(vId==='studentTestSelector') renderStudentDashboard(); if(vId==='studentLeaderboard') populateLeaderboardDropdown(); }
 function saveGeminiKey() { storedGeminiKey = document.getElementById('adminAiKey').value; saveData(); const msg = document.getElementById('aiKeyMsg'); msg.innerText = "API Key Saved!"; msg.style.display = 'block'; setTimeout(() => { msg.style.display = 'none'; }, 3000); }
 
-// --- 4. ADMIN FEATURES ---
+// --- 4. ADMIN FEATURES & NEW PROGRESS TRACKER ---
 function updateGroupDatalist() { const groups = [...new Set(allTests.map(t => t.group || 'General'))]; document.getElementById('existingGroups').innerHTML = groups.map(g => `<option value="${g}">`).join(''); }
 function createNewTest() { const name = document.getElementById('newTestName').value.trim(); const timer = parseInt(document.getElementById('newTestTimer').value) || 0; const group = document.getElementById('newTestGroup').value.trim() || 'General'; if (!name) return alert("Enter test name."); allTests.push({ id: "test_" + Date.now(), name, group, timeLimit: timer, questions: [] }); saveData(); document.getElementById('newTestName').value = ''; document.getElementById('newTestTimer').value = ''; document.getElementById('newTestGroup').value = ''; updateGroupDatalist(); renderAdminTestList(); }
 function renderAdminTestList() {
@@ -438,7 +473,87 @@ function renderAdminTestList() {
         tests.forEach(test => { div.innerHTML += `<div class="list-item"><div><strong>${test.name}</strong><br><span style="font-size:12px; color:#64748b;">${test.questions.length} Qs | ⏱️ ${test.timeLimit || 'No Limit'}</span></div><div class="action-buttons"><button class="btn-warning" onclick="editTestTimer('${test.id}')">Time</button><button class="btn-student" onclick="openTestEditor('${test.id}')">Manage Qs</button><button class="btn-admin" onclick="deleteTest('${test.id}')">Del</button></div></div>`; });
     }
 }
-function renderAdminAnalytics() { const div = document.getElementById('adminAnalyticsList'); div.innerHTML = ''; if (studentScores.length === 0) return div.innerHTML = '<p>No scores yet.</p>'; [...studentScores].reverse().forEach(record => { const pct = Math.round((record.score/record.total)*100); const col = pct>=70?'#10b981':'#ef4444'; div.innerHTML += `<div class="list-item grid-row" style="border-left: 4px solid ${col};"><div><strong>${record.studentName}</strong><br><span style="font-size:11px;">ID: ${record.studentId}</span></div><div style="color:#3b82f6; font-weight:bold;">${record.testName} <br><span style="color:#94a3b8; font-weight:normal; font-size:11px;">${record.date}</span></div><div style="text-align:right;"><strong style="color:${col}; font-size:1.2em;">${pct}%</strong><br><span style="font-size:11px;">${record.score}/${record.total}</span></div></div>`; }); }
+
+// NEW ADMIN DASHBOARD UPGRADE: Full User Details
+function renderAdminAnalytics() { 
+    const div = document.getElementById('adminAnalyticsList'); div.innerHTML = ''; 
+    if (studentScores.length === 0) return div.innerHTML = '<p>No scores yet.</p>'; 
+    
+    // Reverse array without mutating original to keep accurate original index references
+    [...studentScores].reverse().forEach((record, revIndex) => { 
+        const pct = Math.round((record.score/record.total)*100); 
+        const col = pct>=70?'#10b981':'#ef4444'; 
+        
+        // Find the absolute index in original array for the view function
+        const originalIndex = studentScores.length - 1 - revIndex; 
+        
+        div.innerHTML += `
+        <div class="list-item" style="display: grid; grid-template-columns: 2fr 2fr 2fr auto; gap: 10px; align-items: center; border-left: 4px solid ${col};">
+            <div><strong>${record.studentName}</strong><br><span style="font-size:11px;">ID: ${record.studentId}</span></div>
+            <div style="color:#3b82f6; font-weight:bold;">${record.testName} <br><span style="color:#94a3b8; font-weight:normal; font-size:11px;">${record.date}</span></div>
+            <div style="font-size:12px; color:#475569; line-height: 1.6;">
+                <span class="progress-stat" style="background:#ecfdf5; color:#059669;">✅ ${record.score}</span> 
+                <span class="progress-stat" style="background:#fef2f2; color:#dc2626;">❌ ${record.wrong || 0}</span> 
+                <span class="progress-stat" style="background:#f1f5f9; color:#64748b;">⚪ ${record.skipped || 0}</span>
+            </div>
+            <div style="text-align:right;">
+                <button class="btn-student" style="padding: 6px 14px; font-size:12px; width:auto; margin:0;" onclick="viewStudentDetailedProgress(${originalIndex})">View Stats</button>
+            </div>
+        </div>`; 
+    }); 
+}
+
+// NEW FUNCTION: Pop up student specific test details
+function viewStudentDetailedProgress(index) {
+    const record = studentScores[index];
+    const test = allTests.find(t => t.id === record.testId);
+    const content = document.getElementById('adminProgressContent');
+    
+    let htmlStr = `
+        <h4 style="margin:0; font-size: 18px; color:#1e293b;">${record.studentName} <span style="font-weight:normal; color:#64748b; font-size:14px;">(ID: ${record.studentId})</span></h4>
+        <p style="margin:5px 0 15px 0; color:#3b82f6; font-weight:bold;">${record.testName}</p>
+        
+        <div class="stats-grid" style="margin: 10px 0;">
+            <div class="stat-card" style="padding: 10px;"><h4>Score</h4><div style="font-size: 20px;">${record.score} / ${record.total}</div></div>
+            <div class="stat-card" style="padding: 10px;"><h4>Accuracy</h4><div style="font-size: 20px;">${Math.round((record.score/record.total)*100)}%</div></div>
+        </div>
+        <hr style="border:0; border-top:1px solid #e2e8f0; margin:15px 0;">
+        <h4 style="margin-top:0;">Question Breakdown</h4>
+    `;
+
+    if (!test) {
+        htmlStr += `<p style="color:#ef4444; background:#fef2f2; padding:10px; border-radius:8px;">Test data no longer exists or was deleted.</p>`;
+    } else if (!record.answers) {
+        htmlStr += `<p style="color:#f59e0b; background:#fffbeb; padding:10px; border-radius:8px;">Detailed answers were not saved for this older test attempt.</p>`;
+    } else {
+        test.questions.forEach((q, i) => {
+            const userAnswer = record.answers[i];
+            const isCorrect = userAnswer === q.correctIndex;
+            const statusIcon = isCorrect ? '✅' : (userAnswer === null ? '⚪' : '❌');
+            const statusColor = isCorrect ? '#ecfdf5' : (userAnswer === null ? '#f8fafc' : '#fef2f2');
+            const borderColor = isCorrect ? '#6ee7b7' : (userAnswer === null ? '#e2e8f0' : '#fca5a5');
+
+            htmlStr += `<div style="background:${statusColor}; padding:15px; margin-bottom:12px; border-radius:12px; border:1px solid ${borderColor};">
+                <p style="margin:0 0 10px 0; font-size:14px; font-weight:600; color:#1e293b;">${statusIcon} Q${i+1}: ${getTextByLang(q.question, 'en')} / ${getTextByLang(q.question, 'hi')}</p>`;
+
+            q.options.forEach((opt, j) => {
+                let optStyle = "color: #64748b; font-size:13px; padding: 4px 0;";
+                if (j === q.correctIndex) {
+                    optStyle = "color: #059669; font-weight:bold; background: #d1fae5; padding: 4px 8px; border-radius: 4px; display:inline-block; margin: 2px 0;"; 
+                } else if (j === userAnswer && !isCorrect) {
+                    optStyle = "color: #dc2626; text-decoration:line-through; font-weight:bold; padding: 4px 0;"; 
+                }
+                htmlStr += `<div style="${optStyle}">- ${getTextByLang(opt, 'en')} / ${getTextByLang(opt, 'hi')}</div>`;
+            });
+            htmlStr += `</div>`;
+        });
+    }
+    
+    content.innerHTML = htmlStr;
+    openModal('adminProgressModal');
+}
+
+
 function openTestEditor(id) { activeAdminTestId = id; document.getElementById('editingTestTitle').innerText = `Editing: ${allTests.find(t=>t.id===id).name}`; document.querySelectorAll('.admin-view').forEach(el=>el.classList.add('hidden')); document.getElementById('adminQuestionEditor').classList.remove('hidden'); cancelEdit(); renderAdminQuestionList(); }
 function renderAdminQuestionList() { const div = document.getElementById('adminExistingQuestionsList'); const t = allTests.find(t=>t.id===activeAdminTestId); div.innerHTML=''; t.questions.forEach((q,i) => { div.innerHTML += `<div class="list-item"><div><strong>Q${i+1}:</strong> ${getTextByLang(q.question,'en').substring(0,40)}...</div><div class="action-buttons"><button class="btn-secondary" onclick="editQuestion(${i})">Edit</button><button class="btn-admin" onclick="deleteQuestion(${i})">Del</button></div></div>`; }); }
 function editQuestion(i) { const q = allTests.find(t=>t.id===activeAdminTestId).questions[i]; document.getElementById('qTextEn').value = getTextByLang(q.question,'en'); document.getElementById('qTextHi').value = getTextByLang(q.question,'hi'); for(let j=0;j<4;j++){ document.getElementById(`opt${j}En`).value=getTextByLang(q.options[j],'en'); document.getElementById(`opt${j}Hi`).value=getTextByLang(q.options[j],'hi'); } document.getElementById('correctAnswer').value=q.correctIndex; if(q.image){ document.getElementById('qImageBase64').value=q.image; document.getElementById('imagePreview').src=q.image; document.getElementById('imagePreview').classList.remove('hidden'); }else{resetImageUpload();} editingQuestionIndex=i; document.getElementById('saveQuestionBtn').innerText="Update"; document.getElementById('cancelEditBtn').classList.remove('hidden'); }
@@ -487,7 +602,7 @@ function extractQuestionsFromPDF() {
     }; reader.readAsDataURL(file);
 }
 
-// --- 5. STUDENT PORTAL (UPDATED WITH PALETTE & DETAILED RESULTS) ---
+// --- 5. STUDENT PORTAL ---
 function renderStudentDashboard() {
     const testsDiv = document.getElementById('studentTestList'); testsDiv.innerHTML = ''; const playableTests = allTests.filter(t => t.questions.length > 0);
     const groups = playableTests.reduce((acc, test) => { const g = test.group || 'General'; if(!acc[g]) acc[g] = []; acc[g].push(test); return acc; }, {});
@@ -506,7 +621,7 @@ function renderStudentDashboard() {
 function startQuiz(id) { 
     activeStudentTestId=id; currentQuestionIndex=0; const t=allTests.find(t=>t.id===id); 
     userAnswers=new Array(t.questions.length).fill(null); 
-    markedForReview=new Array(t.questions.length).fill(false); // NEW: Initialize marking array
+    markedForReview=new Array(t.questions.length).fill(false); 
     document.querySelectorAll('.student-view').forEach(e=>e.classList.add('hidden')); 
     document.getElementById('quizContainer').classList.remove('hidden'); 
     document.getElementById('activeQuizTitle').innerText=t.name; 
@@ -515,7 +630,6 @@ function startQuiz(id) {
     isPaused=false; renderQuestion(); startTimer(t.timeLimit); 
 }
 
-// NEW: Function to render the question palette
 function renderQuestionPalette() {
     const pal = document.getElementById('questionPalette'); pal.innerHTML = '';
     const t = allTests.find(t=>t.id===activeStudentTestId);
@@ -529,25 +643,22 @@ function renderQuestionPalette() {
         pal.innerHTML += `<button class="palette-btn ${cls}" onclick="jumpToQuestion(${i})">${i+1}</button>`;
     });
     
-    // Update Mark Button Text
     document.getElementById('markReviewBtn').innerText = markedForReview[currentQuestionIndex] ? "Unmark Review" : "Mark Review";
 }
 
-// NEW: Function to jump directly to a question via palette
 function jumpToQuestion(index) {
     currentQuestionIndex = index;
     renderQuestion();
 }
 
-// NEW: Function to toggle mark state
 function toggleMarkForReview() {
     markedForReview[currentQuestionIndex] = !markedForReview[currentQuestionIndex];
-    renderQuestionPalette(); // Instantly update visuals
+    renderQuestionPalette(); 
 }
 
 function renderQuestion() { 
     const t=allTests.find(t=>t.id===activeStudentTestId); const q=t.questions[currentQuestionIndex]; 
-    renderQuestionPalette(); // NEW: Render palette every time we change question
+    renderQuestionPalette(); 
     
     document.getElementById('questionCountText').innerText=`Q ${currentQuestionIndex+1} of ${t.questions.length}`; 
     document.getElementById('questionDisplay').innerText=getTextByLang(q.question, currentQuizLang); 
@@ -555,13 +666,11 @@ function renderQuestion() {
     const opts=document.getElementById('optionsDisplay'); opts.innerHTML=''; 
     q.options.forEach((o,i)=>{ 
         const c=userAnswers[currentQuestionIndex]===i?"checked":""; const s=c?"border-color:#3b82f6; background:#eff6ff;":""; 
-        // Notice we call renderQuestionPalette() when an answer is selected so the dot turns green immediately
         opts.innerHTML+=`<label class="option-label" style="${s}"><input type="radio" name="qo" onchange="userAnswers[${currentQuestionIndex}]=${i};renderQuestion();" ${c}> ${getTextByLang(o,currentQuizLang)}</label>`; 
     }); 
     document.getElementById('prevBtn').disabled=currentQuestionIndex===0; 
     document.getElementById('nextBtn').innerText=currentQuestionIndex===t.questions.length-1?"Submit Test":"Next"; 
     
-    // Style the submit button distinctly
     if(currentQuestionIndex===t.questions.length-1) {
         document.getElementById('nextBtn').style.backgroundColor = "#ef4444"; 
     } else {
@@ -575,7 +684,7 @@ function submitTestEarly() { if(confirm("Are you sure you want to submit the tes
 function startTimer(m) { clearInterval(testTimerInterval); const d=document.getElementById('timerDisplay'); if(!m){ d.innerText="No Limit"; return; } timeRemainingSeconds=m*60; d.style.color="#ef4444"; testTimerInterval=setInterval(()=>{ if(!isPaused){ timeRemainingSeconds--; d.innerText=`${Math.floor(timeRemainingSeconds/60)}:${(timeRemainingSeconds%60).toString().padStart(2,'0')}`; if(timeRemainingSeconds<=0) processTestResults(); } },1000); }
 function togglePause() { isPaused=!isPaused; document.getElementById('quizContent').classList.toggle('hidden'); document.getElementById('pauseScreen').classList.toggle('hidden'); }
 
-// UPDATED: Process results and calculate deep analytics
+// UPDATED: Process results and calculate deep analytics to send to Admin
 function processTestResults() {
     clearInterval(testTimerInterval); 
     const t = allTests.find(t=>t.id===activeStudentTestId); 
@@ -589,22 +698,32 @@ function processTestResults() {
         else wrong++;
     });
     
-    studentScores.push({ studentId:u.id, studentName:u.name, testId:t.id, testName:t.name, score:correct, total:t.questions.length, date:new Date().toLocaleDateString()+' '+new Date().toLocaleTimeString() }); 
+    // NEW: Save all deep stats including user's specific answers to Cloud
+    studentScores.push({ 
+        studentId:u.id, 
+        studentName:u.name, 
+        testId:t.id, 
+        testName:t.name, 
+        score:correct, 
+        wrong:wrong,
+        skipped:skipped,
+        total:t.questions.length, 
+        answers:userAnswers, // Store exact answers for Admin breakdown
+        date:new Date().toLocaleDateString()+' '+new Date().toLocaleTimeString() 
+    }); 
+    
     saveData();
     
     document.getElementById('quizContainer').classList.add('hidden'); 
     document.getElementById('resultContainer').classList.remove('hidden'); 
     
-    // Update Score Header
     document.getElementById('scoreDisplay').innerText = `${correct} / ${t.questions.length}`; 
     document.getElementById('scorePercentage').innerText = `${Math.round((correct/t.questions.length)*100)}%`; 
     
-    // Update Detailed Analytics Grid
     document.getElementById('resCorrect').innerText = correct;
     document.getElementById('resWrong').innerText = wrong;
     document.getElementById('resSkipped').innerText = skipped;
     
-    // Calculate Live Rank for this specific test
     const allScoresForThisTest = studentScores.filter(s => s.testId === t.id);
     const highestScores = {};
     allScoresForThisTest.forEach(scoreRecord => {
