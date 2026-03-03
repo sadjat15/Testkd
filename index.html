@@ -6,28 +6,9 @@
     <title>kd test - Cloud App</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js">// In verifyAdmin() update the pushState:
-pushStateToHistory('adminDashboard');
-
-// In verifyStudent() update the pushState:
-pushStateToHistory('studentDashboard');
-
-// In openTestEditor() add a pushState to track entering the editor:
-function openTestEditor(id) { 
-    activeAdminTestId = id; 
-    document.getElementById('editingTestTitle').innerText = `Editing: ${allTests.find(t=>t.id===id).name}`; 
-    document.querySelectorAll('.admin-view').forEach(el=>el.classList.add('hidden')); 
-    document.getElementById('adminQuestionEditor').classList.remove('hidden'); 
-    cancelEdit(); 
-    renderAdminQuestionList(); 
-    pushStateToHistory('adminEditor'); // <-- Add this
-}
-</script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
     <style>
-        .btn-back { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease; margin: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
-        .btn-back:hover { background: #e2e8f0; color: #1e293b; transform: translateY(-1px); }
-
         /* --- MODERNIZED CSS --- */
         body { 
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
@@ -202,8 +183,7 @@ function openTestEditor(id) {
             <input type="text" id="adminIdInput" placeholder="Admin ID">
             <div class="password-container"><input type="password" id="adminPasswordInput" placeholder="Password"><span class="toggle-password" onclick="toggleVisibility('adminPasswordInput')">👁️</span></div>
             <p id="adminError" class="error-text"></p>
-            <button class="btn-admin" onclick="verifyAdmin()">Access Dashboard</button>
-            <button class="btn-back" style="margin-top: 10px; width: 100%; justify-content: center;" onclick="goBackUI()">🔙 Cancel</button>
+            <button class="btn-admin" onclick="verifyAdmin()">Access Dashboard</button><button class="btn-secondary" style="margin-top: 10px;" onclick="closeModals()">Cancel</button>
         </div>
     </div>
     
@@ -213,8 +193,7 @@ function openTestEditor(id) {
             <input type="number" id="loginId" placeholder="Student ID Number">
             <div class="password-container"><input type="password" id="loginPass" placeholder="Password"><span class="toggle-password" onclick="toggleVisibility('loginPass')">👁️</span></div>
             <p id="loginError" class="error-text"></p>
-            <button class="btn-student" onclick="verifyStudent()">Log In</button>
-            <button class="btn-back" style="margin-top: 10px; width: 100%; justify-content: center;" onclick="goBackUI()">🔙 Cancel</button>
+            <button class="btn-student" onclick="verifyStudent()">Log In</button><button class="btn-secondary" style="margin-top: 10px;" onclick="closeModals()">Cancel</button>
             <span class="text-link" onclick="openRegistration()">Create Account</span>
         </div>
     </div>
@@ -227,9 +206,7 @@ function openTestEditor(id) {
             <div id="regGuidelinesBox" class="guidelines-box">Loading guidelines...</div>
             <label style="display:flex; align-items:center; gap:10px; font-size:14px; margin-bottom: 15px; cursor: pointer;"><input type="checkbox" id="acceptGuidelines" onchange="toggleRegButton()" style="width: 18px; height: 18px; margin:0;"> I accept the rules.</label>
             <p id="regError" class="error-text"></p>
-                       <button id="regSubmitBtn" class="btn-student" onclick="registerStudent()" disabled>Create Account</button>
-            <button class="btn-back" style="margin-top: 10px; width: 100%; justify-content: center;" onclick="goBackUI()">🔙 Back</button>
-
+            <button id="regSubmitBtn" class="btn-student" onclick="registerStudent()" disabled>Create Account</button><button class="btn-secondary" style="margin-top: 10px;" onclick="switchModal('registerModal', 'studentLoginModal')">Back</button>
         </div>
     </div>
 
@@ -253,27 +230,6 @@ function openTestEditor(id) {
                 </div>
             
             <button class="btn-student" style="margin-top: 15px;" onclick="importSelectedQuestions()">Import Selected Questions</button>
-        </div>
-    </div>
-    <div id="exitTestModal" class="modal-overlay hidden" style="z-index: 4000;">
-        <div class="modal-box" style="width: 320px;">
-            <h3 style="color: #ef4444; margin-top: 0;">Leave Test?</h3>
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Are you sure you want to leave? All your current progress will be lost.</p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button class="btn-secondary" style="width: auto; margin: 0;" onclick="cancelExitTest()">Stay</button>
-                <button class="btn-admin" style="width: auto; margin: 0;" onclick="confirmExitTest()">Leave Test</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="submitTestModal" class="modal-overlay hidden" style="z-index: 4000;">
-        <div class="modal-box" style="width: 320px;">
-            <h3 style="color: #3b82f6; margin-top: 0;">Submit Test?</h3>
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">Are you sure you are ready to submit your answers?</p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button class="btn-secondary" style="width: auto; margin: 0;" onclick="cancelSubmitTest()">Cancel</button>
-                <button class="btn-student" style="width: auto; margin: 0;" onclick="confirmSubmitTest()">Submit Now</button>
-            </div>
         </div>
     </div>
 
@@ -306,8 +262,6 @@ function openTestEditor(id) {
         </div>
 
         <div id="adminQuestionEditor" class="admin-view hidden">
-            <button class="btn-back" style="margin-bottom: 20px;" onclick="goBackUI()">🔙 Back to Tests</button>
-
             <button class="btn-secondary" style="margin-bottom: 20px; width: auto; font-size: 14px; padding: 8px 15px;" onclick="switchAdminTab('adminTestManager')">← Back to Tests</button>
             <h3 class="section-title" id="editingTestTitle" style="color: #3b82f6;">Adding Questions to: </h3>
             
@@ -388,12 +342,10 @@ function openTestEditor(id) {
         </div>
 
         <div id="quizContainer" class="student-view hidden">
-                        <div class="quiz-control-bar">
-                <button class="btn-back" onclick="goBackUI()">🔙 Exit</button>
+            <div class="quiz-control-bar">
                 <div><span style="font-size: 13px; color: #64748b; font-weight: 600;">Time Remaining</span><br><span id="timerDisplay" class="timer-display">--:--</span></div>
                 <div class="action-buttons"><button id="pauseBtn" class="btn-warning" onclick="togglePause()">Pause</button><button class="btn-student" onclick="submitTestEarly()">Submit</button></div>
             </div>
-
 
             <h3 id="activeQuizTitle" class="section-title" style="text-align: center; border:none; color: #3b82f6;"></h3>
             
@@ -421,9 +373,6 @@ function openTestEditor(id) {
         </div>
         
         <div id="resultContainer" class="student-view hidden" style="text-align: center;">
-            <button class="btn-back" style="margin-top: 20px; width: 100%; justify-content: center;" onclick="goBackUI()">🔙 Back to Dashboard</button>
-
-
             <h2 id="scoreDisplay" style="color: #3b82f6; font-size: 3.5em; margin: 0;"></h2>
             <p id="scorePercentage" style="font-weight: bold; font-size: 1.3em; margin-top: 5px;"></p>
             
@@ -516,106 +465,64 @@ async function saveData() {
 
 // --- 3. UTILS & AUTH ---
 // BACK BUTTON LOGIC
-
-// Universal UI trigger for Back actions
-function goBackUI() {
-    history.back(); // This naturally triggers the popstate event
-}
-
 function pushStateToHistory(stateName) {
-    if (currentState !== stateName) {
-        currentState = stateName;
-        history.pushState({ view: stateName }, stateName, `#${stateName}`);
-    }
-}
-
-// Safely close visuals without altering history stack manually
-function closeModalsVisualOnly() {
-    document.querySelectorAll('.modal-overlay').forEach(el => el.classList.add('hidden'));
-}
-
-function closeModals() {
-    closeModalsVisualOnly();
-    if(currentState === 'modalOpen') history.back();
+    currentState = stateName;
+    history.pushState({ view: stateName }, stateName, `#${stateName}`);
 }
 
 window.addEventListener('popstate', (event) => {
-    closeModalsVisualOnly(); // Always close modals on a back action
+    // Prevent default reload behavior
     
     if (event.state && event.state.view) {
-        currentState = event.state.view;
-        handleNavigation(event.state.view);
+        const view = event.state.view;
+        handleNavigation(view);
     } else {
-        currentState = 'landing';
+        // Fallback or initial state
         handleNavigation('landing');
     }
 });
 
 function handleNavigation(view) {
-    // Hide all main containers first to reset the view
-    document.getElementById('landingPage').classList.add('hidden');
-    document.getElementById('adminPanel').classList.add('hidden');
-    document.getElementById('userPanel').classList.add('hidden');
-    document.getElementById('quizContainer').classList.add('hidden');
-    document.getElementById('resultContainer').classList.add('hidden');
-
+    closeModals(); // Always close modals on back
+    
     switch (view) {
         case 'landing':
-            if (currentUserId || !document.getElementById('adminPanel').classList.contains('hidden')) {
-                // Prevent backing out to the landing page if logged in. Push them forward again!
-                history.forward();
-                // Ensure their dashboard remains visible
-                if (currentUserId) document.getElementById('userPanel').classList.remove('hidden');
-                else document.getElementById('adminPanel').classList.remove('hidden');
-            } else {
-                logout(); // Ensure variables are cleared
-                document.getElementById('landingPage').classList.remove('hidden');
-            }
-            break;
-            
-        case 'adminDashboard':
-             document.getElementById('adminPanel').classList.remove('hidden');
-             switchAdminTab('adminAnalytics');
-             break;
-             
-        case 'adminEditor':
-             document.getElementById('adminPanel').classList.remove('hidden');
-             switchAdminTab('adminQuestionEditor');
-             break;
-             
-        case 'studentDashboard':
             if (currentUserId) {
-                document.getElementById('userPanel').classList.remove('hidden');
-                switchStudentTab('studentTestSelector');
-                if(testTimerInterval) clearInterval(testTimerInterval); // Stop timer if exiting test
+                 // If logged in as student and we try to go back to landing, log out or stay on dashboard
+                 // Let's keep them on dashboard for better UX, or log them out if you prefer.
+                 // logout(); 
+                 document.getElementById('userPanel').classList.remove('hidden');
+                 document.getElementById('landingPage').classList.add('hidden');
+            } else if (!document.getElementById('adminPanel').classList.contains('hidden')) {
+                // If admin is logged in
             } else {
-                history.replaceState({view: 'landing'}, '', '#landing');
-                document.getElementById('landingPage').classList.remove('hidden');
+                logout(); // Ensure we are actually logged out visually
             }
             break;
-            
-                case 'takingTest':
-             if (!document.getElementById('resultContainer').classList.contains('hidden')) {
-                 // Prevent going "back" into a test from the results screen
-                 history.forward();
-                 document.getElementById('resultContainer').classList.remove('hidden');
-             } else {
-                 // 1. Instantly push the state back to trap them in the test UI
-                 history.pushState({ view: 'takingTest' }, '', '#takingTest');
-                 
-                 // 2. Ensure the test UI remains visible
-                 document.getElementById('userPanel').classList.remove('hidden');
-                 document.getElementById('quizContainer').classList.remove('hidden');
-                 
-                 // 3. Trigger our custom UI modal
-                 document.getElementById('exitTestModal').classList.remove('hidden');
+        case 'adminDashboard':
+             if (!document.getElementById('adminPanel').classList.contains('hidden')) {
+                  switchAdminTab('adminAnalytics');
              }
              break;
-
-             
-        case 'testResults':
-             document.getElementById('userPanel').classList.remove('hidden');
-             document.getElementById('resultContainer').classList.remove('hidden');
+        case 'studentDashboard':
+            if (currentUserId) {
+                switchStudentTab('studentTestSelector');
+                document.getElementById('quizContainer').classList.add('hidden');
+                document.getElementById('resultContainer').classList.add('hidden');
+                if(testTimerInterval) clearInterval(testTimerInterval); // Stop timer if we back out
+            }
+            break;
+        case 'takingTest':
+             // It's tricky to handle back button *during* a test. Usually, you prompt.
+             if (!document.getElementById('quizContainer').classList.contains('hidden')) {
+                 if (confirm("Are you sure you want to leave the test? Progress will be lost.")) {
+                     switchStudentTab('studentTestSelector');
+                     document.getElementById('quizContainer').classList.add('hidden');
+                 } else {
+                     // Stay on test, push state again to "trap" them
+                     history.pushState({ view: 'takingTest' }, '', '#takingTest');
+                 }
+             }
              break;
     }
 }
@@ -934,60 +841,11 @@ function renderStudentDashboard() {
     });
 }
 
-// --- SAVE & RESUME LOGIC ---
-let pendingStartTestId = null; 
-
-function saveLocalTestState() {
-    if(!activeStudentTestId || !currentUserId) return;
-    const state = {
-        answers: userAnswers,
-        marked: markedForReview,
-        timeRemaining: timeRemainingSeconds,
-        currentIndex: currentQuestionIndex,
-        startTime: currentTestStartTime
-    };
-    localStorage.setItem(`kd_test_state_${currentUserId}_${activeStudentTestId}`, JSON.stringify(state));
-}
-
 function startQuiz(id) { 
-    const savedState = localStorage.getItem(`kd_test_state_${currentUserId}_${id}`);
-    if (savedState) {
-        pendingStartTestId = id;
-        document.getElementById('resumeTestModal').classList.remove('hidden');
-    } else {
-        initTestSession(id, false); 
-    }
-}
-
-function startFreshTest() {
-    document.getElementById('resumeTestModal').classList.add('hidden');
-    localStorage.removeItem(`kd_test_state_${currentUserId}_${pendingStartTestId}`); // Clear old save
-    initTestSession(pendingStartTestId, false);
-}
-
-function resumeSavedTest() {
-    document.getElementById('resumeTestModal').classList.add('hidden');
-    initTestSession(pendingStartTestId, true);
-}
-
-function initTestSession(id, isResume) {
-    activeStudentTestId = id; 
-    const t = allTests.find(t=>t.id===id); 
-    
-    if (isResume) {
-        const savedState = JSON.parse(localStorage.getItem(`kd_test_state_${currentUserId}_${id}`));
-        userAnswers = savedState.answers;
-        markedForReview = savedState.marked || new Array(t.questions.length).fill(false);
-        currentQuestionIndex = savedState.currentIndex || 0;
-        timeRemainingSeconds = savedState.timeRemaining;
-        currentTestStartTime = savedState.startTime || Date.now();
-    } else {
-        userAnswers = new Array(t.questions.length).fill(null); 
-        markedForReview = new Array(t.questions.length).fill(false); 
-        currentQuestionIndex = 0; 
-        currentTestStartTime = Date.now(); 
-        timeRemainingSeconds = t.timeLimit ? t.timeLimit * 60 : 0;
-    }
+    activeStudentTestId=id; currentQuestionIndex=0; const t=allTests.find(t=>t.id===id); 
+    userAnswers=new Array(t.questions.length).fill(null); 
+    markedForReview=new Array(t.questions.length).fill(false); 
+    currentTestStartTime = Date.now(); 
     
     document.querySelectorAll('.student-view').forEach(e=>e.classList.add('hidden')); 
     document.getElementById('quizContainer').classList.remove('hidden'); 
@@ -995,11 +853,8 @@ function initTestSession(id, isResume) {
     document.getElementById('pauseScreen').classList.add('hidden'); 
     document.getElementById('quizContent').classList.remove('hidden'); 
     pushStateToHistory('takingTest');
-    isPaused=false; 
-    renderQuestion(); 
-    startTimer(t.timeLimit, isResume); // Pass the resume flag to the timer
+    isPaused=false; renderQuestion(); startTimer(t.timeLimit); 
 }
-
 
 function renderQuestionPalette() {
     const pal = document.getElementById('questionPalette'); pal.innerHTML = '';
@@ -1052,77 +907,7 @@ function renderQuestion() {
 function navigateQuestion(d) { const t=allTests.find(t=>t.id===activeStudentTestId); if(d===1 && currentQuestionIndex===t.questions.length-1) return submitTestEarly(); currentQuestionIndex+=d; renderQuestion(); }
 function setQuizLanguage(l) { currentQuizLang=l; renderQuestion(); }
 function submitTestEarly() { if(confirm("Are you sure you want to submit the test?")) processTestResults(); }
-function startTimer(m, isResume = false) { 
-    clearInterval(testTimerInterval); 
-    const d = document.getElementById('timerDisplay'); 
-    
-    if(!m && timeRemainingSeconds === 0) { 
-        d.innerText="No Limit"; 
-        return; 
-    } 
-    
-    // If not resuming, set the time from scratch. If resuming, timeRemainingSeconds is already set.
-    if(!isResume) timeRemainingSeconds = m * 60; 
-    d.style.color="#ef4444"; 
-    
-    // Initial display update so it doesn't wait 1 second to show
-    d.innerText=`${Math.floor(timeRemainingSeconds/60)}:${(timeRemainingSeconds%60).toString().padStart(2,'0')}`;
-    
-    testTimerInterval = setInterval(() => { 
-        if(!isPaused) { 
-            timeRemainingSeconds--; 
-            d.innerText=`${Math.floor(timeRemainingSeconds/60)}:${(timeRemainingSeconds%60).toString().padStart(2,'0')}`; 
-            
-            // Auto-save every 5 seconds
-            if(timeRemainingSeconds % 5 === 0) saveLocalTestState(); 
-            
-            if(timeRemainingSeconds <= 0) processTestResults(); 
-        } 
-    }, 1000); 
-}
-// --- CUSTOM MODAL CONTROLS ---
-
-// Exit Test Modal Actions
-function cancelExitTest() {
-    document.getElementById('exitTestModal').classList.add('hidden');
-}
-
-function confirmExitTest() {
-    document.getElementById('exitTestModal').classList.add('hidden');
-    if(testTimerInterval) clearInterval(testTimerInterval); // Stop the timer
-    
-    // Hide test view and show dashboard
-    document.getElementById('quizContainer').classList.add('hidden');
-    switchStudentTab('studentTestSelector');
-    
-    // Officially update the history state to the dashboard
-    pushStateToHistory('studentDashboard');
-}
-
-// Submit Test Modal Actions (Replaces the old submitTestEarly function)
-function submitTestEarly() { 
-    document.getElementById('submitTestModal').classList.remove('hidden');
-}
-
-function cancelSubmitTest() {
-    document.getElementById('submitTestModal').classList.add('hidden');
-}
-
-function confirmSubmitTest() {
-    document.getElementById('submitTestModal').classList.add('hidden');
-    processTestResults();
-}
-    <div id="resumeTestModal" class="modal-overlay hidden" style="z-index: 4000;">
-        <div class="modal-box" style="width: 320px;">
-            <h3 style="color: #f59e0b; margin-top: 0;">Resume Test?</h3>
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">We found a saved attempt for this test. Would you like to resume where you left off or start over?</p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button class="btn-secondary" style="width: auto; margin: 0;" onclick="startFreshTest()">Start Fresh</button>
-                <button class="btn-warning" style="width: auto; margin: 0; color: white;" onclick="resumeSavedTest()">Resume</button>
-            </div>
-        </div>
-    </div>
-
+function startTimer(m) { clearInterval(testTimerInterval); const d=document.getElementById('timerDisplay'); if(!m){ d.innerText="No Limit"; return; } timeRemainingSeconds=m*60; d.style.color="#ef4444"; testTimerInterval=setInterval(()=>{ if(!isPaused){ timeRemainingSeconds--; d.innerText=`${Math.floor(timeRemainingSeconds/60)}:${(timeRemainingSeconds%60).toString().padStart(2,'0')}`; if(timeRemainingSeconds<=0) processTestResults(); } },1000); }
 function togglePause() { isPaused=!isPaused; document.getElementById('quizContent').classList.toggle('hidden'); document.getElementById('pauseScreen').classList.toggle('hidden'); }
 
 function processTestResults() {
