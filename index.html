@@ -528,6 +528,38 @@ function pushStateToHistory(stateName) {
         history.pushState({ view: stateName }, stateName, `#${stateName}`);
     }
 }
+// --- CUSTOM MODAL CONTROLS ---
+
+// Exit Test Modal Actions
+function cancelExitTest() {
+    document.getElementById('exitTestModal').classList.add('hidden');
+}
+
+function confirmExitTest() {
+    document.getElementById('exitTestModal').classList.add('hidden');
+    if(testTimerInterval) clearInterval(testTimerInterval); // Stop the timer
+    
+    // Hide test view and show dashboard
+    document.getElementById('quizContainer').classList.add('hidden');
+    switchStudentTab('studentTestSelector');
+    
+    // Officially update the history state to the dashboard
+    pushStateToHistory('studentDashboard');
+}
+
+// Submit Test Modal Actions (Replaces the old submitTestEarly function)
+function submitTestEarly() { 
+    document.getElementById('submitTestModal').classList.remove('hidden');
+}
+
+function cancelSubmitTest() {
+    document.getElementById('submitTestModal').classList.add('hidden');
+}
+
+function confirmSubmitTest() {
+    document.getElementById('submitTestModal').classList.add('hidden');
+    processTestResults();
+}
 
 // Safely close visuals without altering history stack manually
 function closeModalsVisualOnly() {
