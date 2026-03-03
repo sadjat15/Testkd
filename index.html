@@ -415,6 +415,7 @@ let currentUserId = null; let activeAdminTestId = null; let editingQuestionIndex
 let activeStudentTestId = null; let currentQuestionIndex = 0; let userAnswers = []; let markedForReview = []; 
 let currentQuizLang = 'en'; let testTimerInterval; let timeRemainingSeconds = 0; let isPaused = false;
 let currentTestStartTime = 0; 
+let currentState = 'landing'; // Track current view for back button logic
 
 try {
     const localBackup = localStorage.getItem("kd_app_backup");
@@ -463,13 +464,77 @@ async function saveData() {
 }
 
 // --- 3. UTILS & AUTH ---
+// BACK BUTTON LOGIC
+function pushStateToHistory(stateName) {
+    currentState = stateName;
+    history.pushState({ view: stateName }, stateName, `#${stateName}`);
+}
+
+window.addEventListener('popstate', (event) => {
+    // Prevent default reload behavior
+    
+    if (event.state && event.state.view) {
+        const view = event.state.view;
+        handleNavigation(view);
+    } else {
+        // Fallback or initial state
+        handleNavigation('landing');
+    }
+});
+
+function handleNavigation(view) {
+    closeModals(); // Always close modals on back
+    
+    switch (view) {
+        case 'landing':
+            if (currentUserId) {
+                 // If logged in as student and we try to go back to landing, log out or stay on dashboard
+                 // Let's keep them on dashboard for better UX, or log them out if you prefer.
+                 // logout(); 
+                 document.getElementById('userPanel').classList.remove('hidden');
+                 document.getElementById('landingPage').classList.add('hidden');
+            } else if (!document.getElementById('adminPanel').classList.contains('hidden')) {
+                // If admin is logged in
+            } else {
+                logout(); // Ensure we are actually logged out visually
+            }
+            break;
+        case 'adminDashboard':
+             if (!document.getElementById('adminPanel').classList.contains('hidden')) {
+                  switchAdminTab('adminAnalytics');
+             }
+             break;
+        case 'studentDashboard':
+            if (currentUserId) {
+                switchStudentTab('studentTestSelector');
+                document.getElementById('quizContainer').classList.add('hidden');
+                document.getElementById('resultContainer').classList.add('hidden');
+                if(testTimerInterval) clearInterval(testTimerInterval); // Stop timer if we back out
+            }
+            break;
+        case 'takingTest':
+             // It's tricky to handle back button *during* a test. Usually, you prompt.
+             if (!document.getElementById('quizContainer').classList.contains('hidden')) {
+                 if (confirm("Are you sure you want to leave the test? Progress will be lost.")) {
+                     switchStudentTab('studentTestSelector');
+                     document.getElementById('quizContainer').classList.add('hidden');
+                 } else {
+                     // Stay on test, push state again to "trap" them
+                     history.pushState({ view: 'takingTest' }, '', '#takingTest');
+                 }
+             }
+             break;
+    }
+}
+
+
 function toggleVisibility(id) { const f = document.getElementById(id); f.type = f.type === "password" ? "text" : "password"; }
-function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-function closeModals() { document.querySelectorAll('.modal-overlay').forEach(el => el.classList.add('hidden')); }
-function switchModal(cId, oId) { closeModals(); openModal(oId); }
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); pushStateToHistory('modalOpen'); }
+function closeModals() { document.querySelectorAll('.modal-overlay').forEach(el => el.classList.add('hidden')); if(currentState === 'modalOpen') history.back(); }
+function switchModal(cId, oId) { document.getElementById(cId).classList.add('hidden'); document.getElementById(oId).classList.remove('hidden'); }
 function getTextByLang(txt, lang) { return txt ? (txt[lang] || txt['en'] || "") : ""; }
-function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightboxModal').classList.remove('hidden'); }
-function closeLightbox() { document.getElementById('lightboxModal').classList.add('hidden'); }
+function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightboxModal').classList.remove('hidden'); pushStateToHistory('lightboxOpen'); }
+function closeLightbox() { document.getElementById('lightboxModal').classList.add('hidden'); if(currentState === 'lightboxOpen') history.back(); }
 
 document.getElementById('qImageUpload').addEventListener('change', function(e) {
     const file = e.target.files[0]; if (!file) return;
@@ -483,13 +548,13 @@ document.getElementById('qImageUpload').addEventListener('change', function(e) {
 });
 function resetImageUpload() { document.getElementById('qImageUpload').value=""; document.getElementById('qImageBase64').value=""; document.getElementById('imagePreview').classList.add('hidden'); }
 
-function verifyAdmin() { if (document.getElementById('adminIdInput').value === cloudAdminId && document.getElementById('adminPasswordInput').value === cloudAdminPass) { closeModals(); document.getElementById('landingPage').classList.add('hidden'); document.getElementById('adminPanel').classList.remove('hidden'); renderAdminAnalytics(); updateGroupDatalist(); } else { document.getElementById('adminError').innerText = "Incorrect"; document.getElementById('adminError').style.display='block'; } }
-function verifyStudent() { const id = document.getElementById('loginId').value; const pass = document.getElementById('loginPass').value; const user = userDatabase.find(u => u.id === id && u.pass === pass); if (user) { currentUserId = user.id; closeModals(); document.getElementById('landingPage').classList.add('hidden'); document.getElementById('userPanel').classList.remove('hidden'); document.getElementById('welcomeMessage').innerText = `Welcome, ${user.name}`; renderStudentDashboard(); } else { document.getElementById('loginError').innerText = "Incorrect"; document.getElementById('loginError').style.display='block'; } }
+function verifyAdmin() { if (document.getElementById('adminIdInput').value === cloudAdminId && document.getElementById('adminPasswordInput').value === cloudAdminPass) { closeModals(); document.getElementById('landingPage').classList.add('hidden'); document.getElementById('adminPanel').classList.remove('hidden'); renderAdminAnalytics(); updateGroupDatalist(); pushStateToHistory('adminDashboard'); } else { document.getElementById('adminError').innerText = "Incorrect"; document.getElementById('adminError').style.display='block'; } }
+function verifyStudent() { const id = document.getElementById('loginId').value; const pass = document.getElementById('loginPass').value; const user = userDatabase.find(u => u.id === id && u.pass === pass); if (user) { currentUserId = user.id; closeModals(); document.getElementById('landingPage').classList.add('hidden'); document.getElementById('userPanel').classList.remove('hidden'); document.getElementById('welcomeMessage').innerText = `Welcome, ${user.name}`; renderStudentDashboard(); pushStateToHistory('studentDashboard'); } else { document.getElementById('loginError').innerText = "Incorrect"; document.getElementById('loginError').style.display='block'; } }
 function registerStudent() { const name = document.getElementById('regName').value, id = document.getElementById('regId').value, pass = document.getElementById('regPass').value; if(userDatabase.find(u => u.id === id)) return alert("ID taken"); userDatabase.push({ id, name, pass }); saveData(); switchModal('registerModal', 'studentLoginModal'); alert("Registered!"); }
 function openRegistration() { document.getElementById('regGuidelinesBox').innerText = appGuidelines; switchModal('studentLoginModal', 'registerModal'); }
 function toggleRegButton() { document.getElementById('regSubmitBtn').disabled = !document.getElementById('acceptGuidelines').checked; }
-function logout() { clearInterval(testTimerInterval); currentUserId=null; document.getElementById('adminPanel').classList.add('hidden'); document.getElementById('userPanel').classList.add('hidden'); document.getElementById('landingPage').classList.remove('hidden'); }
-function switchAdminTab(vId) { document.querySelectorAll('#adminPanel .admin-view').forEach(el=>el.classList.add('hidden')); document.querySelectorAll('#adminTabs .tab-btn').forEach(el=>el.classList.remove('active')); document.getElementById(vId).classList.remove('hidden'); event.target.classList.add('active'); if(vId==='adminAnalytics') renderAdminAnalytics(); if(vId==='adminTestManager') renderAdminTestList(); if(vId==='adminUserManager') renderAdminUserList(); }
+function logout() { clearInterval(testTimerInterval); currentUserId=null; document.getElementById('adminPanel').classList.add('hidden'); document.getElementById('userPanel').classList.add('hidden'); document.getElementById('landingPage').classList.remove('hidden'); pushStateToHistory('landing'); }
+function switchAdminTab(vId) { document.querySelectorAll('#adminPanel .admin-view').forEach(el=>el.classList.add('hidden')); document.querySelectorAll('#adminTabs .tab-btn').forEach(el=>el.classList.remove('active')); document.getElementById(vId).classList.remove('hidden'); if(event) event.target.classList.add('active'); if(vId==='adminAnalytics') renderAdminAnalytics(); if(vId==='adminTestManager') renderAdminTestList(); if(vId==='adminUserManager') renderAdminUserList(); }
 function switchStudentTab(vId) { document.querySelectorAll('#userPanel .student-view').forEach(el=>el.classList.add('hidden')); document.querySelectorAll('#studentTabs .tab-btn').forEach(el=>el.classList.remove('active')); document.getElementById(vId).classList.remove('hidden'); if(event) event.target.classList.add('active'); if(vId==='studentTestSelector') renderStudentDashboard(); if(vId==='studentLeaderboard') populateLeaderboardDropdown(); }
 function saveGeminiKey() { storedGeminiKey = document.getElementById('adminAiKey').value; saveData(); const msg = document.getElementById('aiKeyMsg'); msg.innerText = "API Key Saved!"; msg.style.display = 'block'; setTimeout(() => { msg.style.display = 'none'; }, 3000); }
 
@@ -787,6 +852,7 @@ function startQuiz(id) {
     document.getElementById('activeQuizTitle').innerText=t.name; 
     document.getElementById('pauseScreen').classList.add('hidden'); 
     document.getElementById('quizContent').classList.remove('hidden'); 
+    pushStateToHistory('takingTest');
     isPaused=false; renderQuestion(); startTimer(t.timeLimit); 
 }
 
@@ -877,6 +943,7 @@ function processTestResults() {
     
     document.getElementById('quizContainer').classList.add('hidden'); 
     document.getElementById('resultContainer').classList.remove('hidden'); 
+    pushStateToHistory('testResults');
     
     document.getElementById('scoreDisplay').innerText = `${correct} / ${t.questions.length}`; 
     document.getElementById('scorePercentage').innerText = `${Math.round((correct/t.questions.length)*100)}%`; 
@@ -905,6 +972,10 @@ function setReviewLanguage(l) { currentQuizLang=l; buildReviewUI(allTests.find(t
 
 function renderLeaderboardData() { const tId=document.getElementById('leaderboardTestSelect').value; const div=document.getElementById('leaderboardResults'); div.innerHTML=''; if(!tId) return; const scores=studentScores.filter(s=>s.testId===tId); const high={}; scores.forEach(s=>{ if(!high[s.studentId] || high[s.studentId].score<s.score) high[s.studentId]=s; }); Object.values(high).sort((a,b)=>b.score-a.score).forEach((r,i)=>{ const rank=i+1; div.innerHTML+=`<div class="list-item"><div><span class="rank-badge rank-${rank<4?rank:''}">#${rank}</span> <strong>${r.studentName}</strong></div><div style="font-weight:bold;">${Math.round((r.score/r.total)*100)}%</div></div>`; }); }
 function populateLeaderboardDropdown() { const sel=document.getElementById('leaderboardTestSelect'); sel.innerHTML='<option value="">Select test...</option>'; [...new Set(studentScores.map(s=>s.testId))].forEach(id=>{ const t=allTests.find(t=>t.id===id); if(t) sel.innerHTML+=`<option value="${id}">${t.name}</option>`; }); }
-    </script>
+    
+// Initialize history state
+history.replaceState({ view: 'landing' }, 'landing', '#landing');
+
+</script>
 </body>
 </html>
