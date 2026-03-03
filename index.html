@@ -528,48 +528,6 @@ function pushStateToHistory(stateName) {
         history.pushState({ view: stateName }, stateName, `#${stateName}`);
     }
 }
-// --- CUSTOM MODAL CONTROLS ---
-
-// Exit Test Modal Actions
-function cancelExitTest() {
-    document.getElementById('exitTestModal').classList.add('hidden');
-}
-
-function confirmExitTest() {
-    document.getElementById('exitTestModal').classList.add('hidden');
-    if(testTimerInterval) clearInterval(testTimerInterval); // Stop the timer
-    
-    // Hide test view and show dashboard
-    document.getElementById('quizContainer').classList.add('hidden');
-    switchStudentTab('studentTestSelector');
-    
-    // Officially update the history state to the dashboard
-    pushStateToHistory('studentDashboard');
-}
-
-// Submit Test Modal Actions (Replaces the old submitTestEarly function)
-function submitTestEarly() { 
-    document.getElementById('submitTestModal').classList.remove('hidden');
-}
-
-function cancelSubmitTest() {
-    document.getElementById('submitTestModal').classList.add('hidden');
-}
-
-function confirmSubmitTest() {
-    document.getElementById('submitTestModal').classList.add('hidden');
-    processTestResults();
-}
-    <div id="resumeTestModal" class="modal-overlay hidden" style="z-index: 4000;">
-        <div class="modal-box" style="width: 320px;">
-            <h3 style="color: #f59e0b; margin-top: 0;">Resume Test?</h3>
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">We found a saved attempt for this test. Would you like to resume where you left off or start over?</p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button class="btn-secondary" style="width: auto; margin: 0;" onclick="startFreshTest()">Start Fresh</button>
-                <button class="btn-warning" style="width: auto; margin: 0; color: white;" onclick="resumeSavedTest()">Resume</button>
-            </div>
-        </div>
-    </div>
 
 // Safely close visuals without altering history stack manually
 function closeModalsVisualOnly() {
@@ -1094,7 +1052,77 @@ function renderQuestion() {
 function navigateQuestion(d) { const t=allTests.find(t=>t.id===activeStudentTestId); if(d===1 && currentQuestionIndex===t.questions.length-1) return submitTestEarly(); currentQuestionIndex+=d; renderQuestion(); }
 function setQuizLanguage(l) { currentQuizLang=l; renderQuestion(); }
 function submitTestEarly() { if(confirm("Are you sure you want to submit the test?")) processTestResults(); }
-function startTimer(m) { clearInterval(testTimerInterval); const d=document.getElementById('timerDisplay'); if(!m){ d.innerText="No Limit"; return; } timeRemainingSeconds=m*60; d.style.color="#ef4444"; testTimerInterval=setInterval(()=>{ if(!isPaused){ timeRemainingSeconds--; d.innerText=`${Math.floor(timeRemainingSeconds/60)}:${(timeRemainingSeconds%60).toString().padStart(2,'0')}`; if(timeRemainingSeconds<=0) processTestResults(); } },1000); }
+function startTimer(m, isResume = false) { 
+    clearInterval(testTimerInterval); 
+    const d = document.getElementById('timerDisplay'); 
+    
+    if(!m && timeRemainingSeconds === 0) { 
+        d.innerText="No Limit"; 
+        return; 
+    } 
+    
+    // If not resuming, set the time from scratch. If resuming, timeRemainingSeconds is already set.
+    if(!isResume) timeRemainingSeconds = m * 60; 
+    d.style.color="#ef4444"; 
+    
+    // Initial display update so it doesn't wait 1 second to show
+    d.innerText=`${Math.floor(timeRemainingSeconds/60)}:${(timeRemainingSeconds%60).toString().padStart(2,'0')}`;
+    
+    testTimerInterval = setInterval(() => { 
+        if(!isPaused) { 
+            timeRemainingSeconds--; 
+            d.innerText=`${Math.floor(timeRemainingSeconds/60)}:${(timeRemainingSeconds%60).toString().padStart(2,'0')}`; 
+            
+            // Auto-save every 5 seconds
+            if(timeRemainingSeconds % 5 === 0) saveLocalTestState(); 
+            
+            if(timeRemainingSeconds <= 0) processTestResults(); 
+        } 
+    }, 1000); 
+}
+// --- CUSTOM MODAL CONTROLS ---
+
+// Exit Test Modal Actions
+function cancelExitTest() {
+    document.getElementById('exitTestModal').classList.add('hidden');
+}
+
+function confirmExitTest() {
+    document.getElementById('exitTestModal').classList.add('hidden');
+    if(testTimerInterval) clearInterval(testTimerInterval); // Stop the timer
+    
+    // Hide test view and show dashboard
+    document.getElementById('quizContainer').classList.add('hidden');
+    switchStudentTab('studentTestSelector');
+    
+    // Officially update the history state to the dashboard
+    pushStateToHistory('studentDashboard');
+}
+
+// Submit Test Modal Actions (Replaces the old submitTestEarly function)
+function submitTestEarly() { 
+    document.getElementById('submitTestModal').classList.remove('hidden');
+}
+
+function cancelSubmitTest() {
+    document.getElementById('submitTestModal').classList.add('hidden');
+}
+
+function confirmSubmitTest() {
+    document.getElementById('submitTestModal').classList.add('hidden');
+    processTestResults();
+}
+    <div id="resumeTestModal" class="modal-overlay hidden" style="z-index: 4000;">
+        <div class="modal-box" style="width: 320px;">
+            <h3 style="color: #f59e0b; margin-top: 0;">Resume Test?</h3>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">We found a saved attempt for this test. Would you like to resume where you left off or start over?</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn-secondary" style="width: auto; margin: 0;" onclick="startFreshTest()">Start Fresh</button>
+                <button class="btn-warning" style="width: auto; margin: 0; color: white;" onclick="resumeSavedTest()">Resume</button>
+            </div>
+        </div>
+    </div>
+
 function togglePause() { isPaused=!isPaused; document.getElementById('quizContent').classList.toggle('hidden'); document.getElementById('pauseScreen').classList.toggle('hidden'); }
 
 function processTestResults() {
