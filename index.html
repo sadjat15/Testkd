@@ -594,22 +594,24 @@ function handleNavigation(view) {
             }
             break;
             
-        case 'takingTest':
+                case 'takingTest':
              if (!document.getElementById('resultContainer').classList.contains('hidden')) {
                  // Prevent going "back" into a test from the results screen
                  history.forward();
                  document.getElementById('resultContainer').classList.remove('hidden');
-             } else if (confirm("Are you sure you want to leave the test? Progress will be lost.")) {
-                 document.getElementById('userPanel').classList.remove('hidden');
-                 switchStudentTab('studentTestSelector');
-                 if(testTimerInterval) clearInterval(testTimerInterval);
              } else {
-                 // Trap them back in the test state
+                 // 1. Instantly push the state back to trap them in the test UI
                  history.pushState({ view: 'takingTest' }, '', '#takingTest');
+                 
+                 // 2. Ensure the test UI remains visible
                  document.getElementById('userPanel').classList.remove('hidden');
                  document.getElementById('quizContainer').classList.remove('hidden');
+                 
+                 // 3. Trigger our custom UI modal
+                 document.getElementById('exitTestModal').classList.remove('hidden');
              }
              break;
+
              
         case 'testResults':
              document.getElementById('userPanel').classList.remove('hidden');
