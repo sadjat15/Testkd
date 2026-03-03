@@ -211,7 +211,9 @@
             <div id="regGuidelinesBox" class="guidelines-box">Loading guidelines...</div>
             <label style="display:flex; align-items:center; gap:10px; font-size:14px; margin-bottom: 15px; cursor: pointer;"><input type="checkbox" id="acceptGuidelines" onchange="toggleRegButton()" style="width: 18px; height: 18px; margin:0;"> I accept the rules.</label>
             <p id="regError" class="error-text"></p>
-            <button id="regSubmitBtn" class="btn-student" onclick="registerStudent()" disabled>Create Account</button><button class="btn-secondary" style="margin-top: 10px;" onclick="switchModal('registerModal', 'studentLoginModal')">Back</button>
+                       <button id="regSubmitBtn" class="btn-student" onclick="registerStudent()" disabled>Create Account</button>
+            <button class="btn-back" style="margin-top: 10px; width: 100%; justify-content: center;" onclick="goBackUI()">🔙 Back</button>
+
         </div>
     </div>
 
@@ -267,6 +269,8 @@
         </div>
 
         <div id="adminQuestionEditor" class="admin-view hidden">
+            <button class="btn-back" style="margin-bottom: 20px;" onclick="goBackUI()">🔙 Back to Tests</button>
+
             <button class="btn-secondary" style="margin-bottom: 20px; width: auto; font-size: 14px; padding: 8px 15px;" onclick="switchAdminTab('adminTestManager')">← Back to Tests</button>
             <h3 class="section-title" id="editingTestTitle" style="color: #3b82f6;">Adding Questions to: </h3>
             
@@ -347,10 +351,12 @@
         </div>
 
         <div id="quizContainer" class="student-view hidden">
-            <div class="quiz-control-bar">
+                        <div class="quiz-control-bar">
+                <button class="btn-back" onclick="goBackUI()">🔙 Exit</button>
                 <div><span style="font-size: 13px; color: #64748b; font-weight: 600;">Time Remaining</span><br><span id="timerDisplay" class="timer-display">--:--</span></div>
                 <div class="action-buttons"><button id="pauseBtn" class="btn-warning" onclick="togglePause()">Pause</button><button class="btn-student" onclick="submitTestEarly()">Submit</button></div>
             </div>
+
 
             <h3 id="activeQuizTitle" class="section-title" style="text-align: center; border:none; color: #3b82f6;"></h3>
             
@@ -378,6 +384,9 @@
         </div>
         
         <div id="resultContainer" class="student-view hidden" style="text-align: center;">
+            <button class="btn-back" style="margin-top: 20px; width: 100%; justify-content: center;" onclick="goBackUI()">🔙 Back to Dashboard</button>
+
+
             <h2 id="scoreDisplay" style="color: #3b82f6; font-size: 3.5em; margin: 0;"></h2>
             <p id="scorePercentage" style="font-weight: bold; font-size: 1.3em; margin-top: 5px;"></p>
             
