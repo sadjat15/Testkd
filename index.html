@@ -599,8 +599,6 @@ function viewStudentDetailedProgress(index) {
     openModal('adminProgressModal');
 }
 
-
-// --- NEW QUESTION BANK LOGIC ---
 function openQuestionBankModal() {
     const sel = document.getElementById('qbTestFilter');
     sel.innerHTML = '<option value="all">All Other Tests</option>';
@@ -620,8 +618,8 @@ function renderQuestionBankList() {
     let count = 0;
 
     allTests.forEach(t => {
-        if (t.id === activeAdminTestId) return; // Skip current test
-        if (filterId !== 'all' && t.id !== filterId) return; // Apply filter
+        if (t.id === activeAdminTestId) return; 
+        if (filterId !== 'all' && t.id !== filterId) return; 
         
         t.questions.forEach((q, i) => {
             const qText = getTextByLang(q.question, 'en') || getTextByLang(q.question, 'hi');
@@ -655,7 +653,6 @@ function importSelectedQuestions() {
         const sourceTest = allTests.find(t => t.id === tId);
         
         if (sourceTest && sourceTest.questions[parseInt(qIdxStr)]) {
-            // Deep copy the object to prevent future edits from affecting the old test
             const qCopy = JSON.parse(JSON.stringify(sourceTest.questions[parseInt(qIdxStr)]));
             currentTest.questions.push(qCopy);
             importedCount++;
@@ -677,46 +674,88 @@ function openTestEditor(id) { activeAdminTestId = id; document.getElementById('e
 function renderAdminQuestionList() { const div = document.getElementById('adminExistingQuestionsList'); const t = allTests.find(t=>t.id===activeAdminTestId); div.innerHTML=''; t.questions.forEach((q,i) => { div.innerHTML += `<div class="list-item"><div><strong>Q${i+1}:</strong> ${getTextByLang(q.question,'en').substring(0,40)}...</div><div class="action-buttons"><button class="btn-secondary" onclick="editQuestion(${i})">Edit</button><button class="btn-admin" onclick="deleteQuestion(${i})">Del</button></div></div>`; }); }
 function editQuestion(i) { const q = allTests.find(t=>t.id===activeAdminTestId).questions[i]; document.getElementById('qTextEn').value = getTextByLang(q.question,'en'); document.getElementById('qTextHi').value = getTextByLang(q.question,'hi'); for(let j=0;j<4;j++){ document.getElementById(`opt${j}En`).value=getTextByLang(q.options[j],'en'); document.getElementById(`opt${j}Hi`).value=getTextByLang(q.options[j],'hi'); } document.getElementById('correctAnswer').value=q.correctIndex; if(q.image){ document.getElementById('qImageBase64').value=q.image; document.getElementById('imagePreview').src=q.image; document.getElementById('imagePreview').classList.remove('hidden'); }else{resetImageUpload();} editingQuestionIndex=i; document.getElementById('saveQuestionBtn').innerText="Update"; document.getElementById('cancelEditBtn').classList.remove('hidden'); }
 function cancelEdit() { editingQuestionIndex=null; document.getElementById('saveQuestionBtn').innerText="Save Question"; document.getElementById('cancelEditBtn').classList.add('hidden'); document.getElementById('qTextEn').value=''; document.getElementById('qTextHi').value=''; for(let j=0;j<4;j++){ document.getElementById(`opt${j}En`).value=''; document.getElementById(`opt${j}Hi`).value=''; } document.getElementById('correctAnswer').value='0'; resetImageUpload(); }
-function addQuestionToTest() { const qEn=document.getElementById('qTextEn').value, qHi=document.getElementById('qTextHi').value; const opts=[]; for(let i=0;i<4;i++) opts.push({en:document.getElementById(`opt${i}En`).value, hi:document.getElementById(`opt${i}Hi`).value}); if(!qEn || opts.some(o=>!o.en)) return alert("Fill English fields."); const obj = { question:{en:qEn,hi:qHi}, options:opts, correctIndex:parseInt(document.getElementById('correctAnswer').value), image:document.getElementById('qImageBase64').value }; const t = allTests.find(t=>t.id===activeAdminTestId); if(editingQuestionIndex!==null) t.questions[editingQuestionIndex]=obj; else t.questions.push(obj); saveData(); renderAdminQuestionList(); cancelEdit(); }
+
+// --- UPDATED ADD QUESTION (Manual) ---
+// Note: Manual input requires the admin to enter both if they want both. 
+// We generally rely on the AI tools for auto-translation.
+function addQuestionToTest() { 
+    const qEn=document.getElementById('qTextEn').value, qHi=document.getElementById('qTextHi').value; 
+    const opts=[]; for(let i=0;i<4;i++) opts.push({en:document.getElementById(`opt${i}En`).value, hi:document.getElementById(`opt${i}Hi`).value}); 
+    if(!qEn || opts.some(o=>!o.en)) return alert("Fill English fields."); 
+    const obj = { question:{en:qEn,hi:qHi}, options:opts, correctIndex:parseInt(document.getElementById('correctAnswer').value), image:document.getElementById('qImageBase64').value }; 
+    const t = allTests.find(t=>t.id===activeAdminTestId); 
+    if(editingQuestionIndex!==null) t.questions[editingQuestionIndex]=obj; else t.questions.push(obj); 
+    saveData(); renderAdminQuestionList(); cancelEdit(); 
+}
+
 function deleteQuestion(i) { allTests.find(t=>t.id===activeAdminTestId).questions.splice(i,1); saveData(); renderAdminQuestionList(); }
 function deleteTest(id) { if(confirm("Delete test?")) { allTests = allTests.filter(t=>t.id!==id); saveData(); renderAdminTestList(); } }
 function editTestTimer(id) { const t=allTests.find(t=>t.id===id); let n=prompt("Minutes (0=none):",t.timeLimit); if(n!==null){ t.timeLimit=parseInt(n)||0; saveData(); renderAdminTestList(); } }
 function renderAdminUserList() { const div=document.getElementById('adminUserList'); div.innerHTML=''; userDatabase.forEach((u,i) => div.innerHTML+=`<div class="list-item"><div><strong>${u.name}</strong> (ID: ${u.id})</div><button class="btn-admin" onclick="userDatabase.splice(${i},1);saveData();renderAdminUserList();">Rem</button></div>`); }
 
-// --- AI BULK GENERATION ---
+// --- AI TRANSLATION CHECK HELPER ---
+function checkIfLanguageSubject(text) {
+    const t = text.toLowerCase();
+    return t.includes('english grammar') || t.includes('hindi grammar') || t.includes('hindi sahitya') || t.includes('english literature');
+}
+
+// --- UPDATED AI BULK GENERATION ---
 async function generateBulkQuestionsWithAI() { 
     const topicInput = document.getElementById('aiTopicInput'); const difficultySelect = document.getElementById('aiDifficultySelect'); const countInput = document.getElementById('aiQuestionCount'); const generateBtn = document.getElementById('aiGenerateBtn'); const errorMsg = document.getElementById('aiGenError');
     const topic = topicInput.value.trim(); const difficulty = difficultySelect.value; const count = parseInt(countInput.value) || 1;
     if (!storedGeminiKey) { errorMsg.innerText = "Please configure the API Key first."; errorMsg.style.display = 'block'; return; }
     if (!topic) { errorMsg.innerText = "Enter a topic."; errorMsg.style.display = 'block'; return; }
+    
     errorMsg.style.display = 'none'; generateBtn.innerText = `Generating ${count}...`; generateBtn.disabled = true;
-    const promptText = `Generate ${count} multiple-choice question(s) about: "${topic}". Difficulty: ${difficulty.toUpperCase()}. Return ONLY a valid JSON ARRAY. Structure: [{"question":{"en":"...","hi":"..."},"options":[{"en":"...","hi":"..."},{"en":"...","hi":"..."},{"en":"...","hi":"..."},{"en":"...","hi":"..."}],"correctIndex":0,"image":""}]`;
+
+    const isLangSubject = checkIfLanguageSubject(topic);
+    
+    let promptText = "";
+    if(isLangSubject) {
+        promptText = `Generate ${count} multiple-choice question(s) about: "${topic}". Difficulty: ${difficulty.toUpperCase()}. Since this is a language subject, keep the question and options in their native language (do not translate). Map the text to BOTH 'en' and 'hi' fields identically. Return ONLY a valid JSON ARRAY. Structure: [{"question":{"en":"...","hi":"..."},"options":[{"en":"...","hi":"..."},{"en":"...","hi":"..."},{"en":"...","hi":"..."},{"en":"...","hi":"..."}],"correctIndex":0,"image":""}]`;
+    } else {
+        promptText = `Generate ${count} multiple-choice question(s) about: "${topic}". Difficulty: ${difficulty.toUpperCase()}. You MUST provide the question and ALL 4 options in BOTH English (en) and Hindi (hi). Return ONLY a valid JSON ARRAY. Structure: [{"question":{"en":"[English Text]","hi":"[Hindi Translation]"},"options":[{"en":"...","hi":"..."},{"en":"...","hi":"..."},{"en":"...","hi":"..."},{"en":"...","hi":"..."}],"correctIndex":0,"image":""}]`;
+    }
+
     try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${storedGeminiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }], generationConfig: { responseMimeType: "application/json" } }) });
         if (!response.ok) throw new Error(`Google API Error`);
         const data = await response.json(); const aiText = data.candidates[0].content.parts[0].text; const parsedQuestions = JSON.parse(aiText);
         const currentTest = allTests.find(t => t.id === activeAdminTestId);
         parsedQuestions.forEach(qData => { currentTest.questions.push({ question: { en: qData.question?.en || "", hi: qData.question?.hi || "" }, options: qData.options || [], correctIndex: parseInt(qData.correctIndex) || 0, image: "" }); });
-        saveData(); renderAdminQuestionList(); document.getElementById('adminMessage').innerText = `✨ Added ${parsedQuestions.length} questions!`; document.getElementById('adminMessage').style.display = 'block'; setTimeout(() => document.getElementById('adminMessage').style.display = 'none', 4000); topicInput.value = '';
+        saveData(); renderAdminQuestionList(); document.getElementById('adminMessage').innerText = `✨ Added ${parsedQuestions.length} bilingual questions!`; document.getElementById('adminMessage').style.display = 'block'; setTimeout(() => document.getElementById('adminMessage').style.display = 'none', 4000); topicInput.value = '';
     } catch (error) { errorMsg.innerText = "Error: " + error.message; errorMsg.style.display = 'block'; } finally { generateBtn.innerText = "Bulk Generate"; generateBtn.disabled = false; }
 }
 
+// --- UPDATED AI PDF EXTRACTION ---
 function extractQuestionsFromPDF() {
     const fileInput = document.getElementById('pdfUploadInput'); const extractBtn = document.getElementById('pdfExtractBtn'); const msgBox = document.getElementById('pdfExtractMsg');
     if (!storedGeminiKey) { msgBox.innerText = "Configure API Key first."; msgBox.style.color = "#ef4444"; msgBox.style.display = 'block'; return; }
     if (!fileInput.files || fileInput.files.length === 0) { msgBox.innerText = "Select a PDF."; msgBox.style.color = "#ef4444"; msgBox.style.display = 'block'; return; }
-    const file = fileInput.files[0]; msgBox.style.color = "#4338ca"; msgBox.innerText = "Reading PDF..."; msgBox.style.display = 'block'; extractBtn.disabled = true; extractBtn.innerText = "Extracting...";
+    
+    const currentTestName = allTests.find(t => t.id === activeAdminTestId).name;
+    const isLangSubject = checkIfLanguageSubject(currentTestName);
+
+    const file = fileInput.files[0]; msgBox.style.color = "#4338ca"; msgBox.innerText = "Reading & Translating PDF..."; msgBox.style.display = 'block'; extractBtn.disabled = true; extractBtn.innerText = "Extracting...";
+    
     const reader = new FileReader();
     reader.onload = async function(e) {
         const base64String = e.target.result.split(',')[1];
-        const promptText = `Extract ALL multiple-choice questions from this PDF. Provide question and 4 options in English and Hindi (if mixed, put source in en). Deduce correctIndex if answer key is present, else 0. Return ONLY JSON ARRAY: [{"question":{"en":"","hi":""},"options":[{"en":"","hi":""},{"en":"","hi":""},{"en":"","hi":""},{"en":"","hi":""}],"correctIndex":0,"image":""}]`;
+        
+        let promptText = "";
+        if(isLangSubject) {
+            promptText = `Extract ALL multiple-choice questions from this PDF. Since this test is likely a language subject based on its title, do NOT translate the text. Put the exact extracted text into BOTH 'en' and 'hi' fields. Deduce correctIndex if answer key is present, else 0. Return ONLY JSON ARRAY: [{"question":{"en":"","hi":""},"options":[{"en":"","hi":""},{"en":"","hi":""},{"en":"","hi":""},{"en":"","hi":""}],"correctIndex":0,"image":""}]`;
+        } else {
+            promptText = `Extract ALL multiple-choice questions from this PDF. You MUST translate the questions and options so that they are provided in BOTH English ('en') and Hindi ('hi'). Deduce correctIndex if answer key is present, else 0. Return ONLY JSON ARRAY: [{"question":{"en":"","hi":""},"options":[{"en":"","hi":""},{"en":"","hi":""},{"en":"","hi":""},{"en":"","hi":""}],"correctIndex":0,"image":""}]`;
+        }
+
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${storedGeminiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [ { text: promptText }, { inlineData: { mimeType: "application/pdf", data: base64String } } ] }], generationConfig: { responseMimeType: "application/json" } }) });
             if (!response.ok) throw new Error("API Request Failed");
             const data = await response.json(); const aiText = data.candidates[0].content.parts[0].text; const parsedQuestions = JSON.parse(aiText);
             const currentTest = allTests.find(t => t.id === activeAdminTestId);
             parsedQuestions.forEach(qData => { currentTest.questions.push({ question: { en: qData.question?.en || "", hi: qData.question?.hi || "" }, options: qData.options || [ {en:"A", hi:""}, {en:"B", hi:""}, {en:"C", hi:""}, {en:"D", hi:""} ], correctIndex: parseInt(qData.correctIndex) || 0, image: "" }); });
-            saveData(); renderAdminQuestionList(); msgBox.innerText = `✨ Success! Extracted ${parsedQuestions.length} questions.`; msgBox.style.color = "#10b981"; fileInput.value = ""; 
+            saveData(); renderAdminQuestionList(); msgBox.innerText = `✨ Success! Extracted & Translated ${parsedQuestions.length} questions.`; msgBox.style.color = "#10b981"; fileInput.value = ""; 
         } catch (error) { msgBox.innerText = "Error: " + error.message; msgBox.style.color = "#ef4444"; } finally { extractBtn.innerText = "Extract Questions"; extractBtn.disabled = false; }
     }; reader.readAsDataURL(file);
 }
