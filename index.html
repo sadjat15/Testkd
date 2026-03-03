@@ -560,6 +560,16 @@ function confirmSubmitTest() {
     document.getElementById('submitTestModal').classList.add('hidden');
     processTestResults();
 }
+    <div id="resumeTestModal" class="modal-overlay hidden" style="z-index: 4000;">
+        <div class="modal-box" style="width: 320px;">
+            <h3 style="color: #f59e0b; margin-top: 0;">Resume Test?</h3>
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">We found a saved attempt for this test. Would you like to resume where you left off or start over?</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn-secondary" style="width: auto; margin: 0;" onclick="startFreshTest()">Start Fresh</button>
+                <button class="btn-warning" style="width: auto; margin: 0; color: white;" onclick="resumeSavedTest()">Resume</button>
+            </div>
+        </div>
+    </div>
 
 // Safely close visuals without altering history stack manually
 function closeModalsVisualOnly() {
