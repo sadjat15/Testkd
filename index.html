@@ -186,7 +186,8 @@
             <input type="text" id="adminIdInput" placeholder="Admin ID">
             <div class="password-container"><input type="password" id="adminPasswordInput" placeholder="Password"><span class="toggle-password" onclick="toggleVisibility('adminPasswordInput')">👁️</span></div>
             <p id="adminError" class="error-text"></p>
-            <button class="btn-admin" onclick="verifyAdmin()">Access Dashboard</button><button class="btn-secondary" style="margin-top: 10px;" onclick="closeModals()">Cancel</button>
+            <button class="btn-admin" onclick="verifyAdmin()">Access Dashboard</button>
+            <button class="btn-back" style="margin-top: 10px; width: 100%; justify-content: center;" onclick="goBackUI()">🔙 Cancel</button>
         </div>
     </div>
     
@@ -196,7 +197,8 @@
             <input type="number" id="loginId" placeholder="Student ID Number">
             <div class="password-container"><input type="password" id="loginPass" placeholder="Password"><span class="toggle-password" onclick="toggleVisibility('loginPass')">👁️</span></div>
             <p id="loginError" class="error-text"></p>
-            <button class="btn-student" onclick="verifyStudent()">Log In</button><button class="btn-secondary" style="margin-top: 10px;" onclick="closeModals()">Cancel</button>
+            <button class="btn-student" onclick="verifyStudent()">Log In</button>
+            <button class="btn-back" style="margin-top: 10px; width: 100%; justify-content: center;" onclick="goBackUI()">🔙 Cancel</button>
             <span class="text-link" onclick="openRegistration()">Create Account</span>
         </div>
     </div>
