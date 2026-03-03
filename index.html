@@ -142,8 +142,26 @@
         .stat-card div { font-size: 28px; font-weight: 800; }
         @media(min-width: 600px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
         
-        /* Progress Stat Items */
         .progress-stat { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; margin-right: 5px; margin-top: 5px; }
+
+        /* --- ADMIN PROGRESS REPORT STYLES --- */
+        .report-header-card { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 25px; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .report-header-card h2 { margin: 0 0 5px 0; font-size: 22px; color: #fff; }
+        .report-header-card p { margin: 0; color: #94a3b8; font-size: 14px; }
+        .report-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+        .report-stat-box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        .report-stat-box h4 { margin: 0 0 5px 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; }
+        .report-stat-box div { font-size: 22px; font-weight: bold; color: #38bdf8; }
+        
+        .progress-bar-bg { width: 100%; background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; margin-top: 20px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: #10b981; border-radius: 4px; transition: width 1s ease-out; }
+
+        .q-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 15px; transition: all 0.2s; }
+        .q-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .q-status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 15px; }
+        .q-correct { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+        .q-wrong { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+        .q-skipped { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
     </style>
 </head>
 <body>
@@ -193,9 +211,25 @@
     </div>
 
     <div id="adminProgressModal" class="modal-overlay hidden">
-        <div class="modal-box" style="width: 600px; max-width: 95vw; max-height: 85vh;">
-            <div class="header-bar"><h3 style="color: #3b82f6; margin: 0;">Student Test Report</h3><button class="btn-logout" style="width:auto; padding: 5px 10px;" onclick="closeModals()">Close</button></div>
-            <div id="adminProgressContent" style="text-align: left;"></div>
+        <div class="modal-box" style="width: 650px; max-width: 95vw; max-height: 85vh; padding: 30px;">
+            <div class="header-bar" style="border-bottom:none; margin-bottom:0;"><h3 style="color: #3b82f6; margin: 0; font-size:20px;">Performance Report</h3><button class="btn-logout" style="width:auto; padding: 6px 14px;" onclick="closeModals()">Close</button></div>
+            <div id="adminProgressContent" style="text-align: left; margin-top: 15px;"></div>
+        </div>
+    </div>
+
+    <div id="questionBankModal" class="modal-overlay hidden">
+        <div class="modal-box" style="width: 700px; max-width: 95vw; height: 85vh; padding: 25px; display: flex; flex-direction: column;">
+            <div class="header-bar" style="border-bottom:none; margin-bottom:10px;">
+                <h3 style="color: #f59e0b; margin: 0; font-size:20px;">📚 Question Bank</h3>
+                <button class="btn-logout" style="width:auto; padding: 6px 14px;" onclick="closeModals()">Close</button>
+            </div>
+            <p style="text-align:left; color:#64748b; font-size:13px; margin-top:0;">Select questions from past tests to import into your current test.</p>
+            <select id="qbTestFilter" onchange="renderQuestionBankList()" style="margin: 0 0 15px 0; padding: 10px;"></select>
+            
+            <div id="questionBankList" style="flex-grow: 1; overflow-y: auto; text-align: left; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #f8fafc;">
+                </div>
+            
+            <button class="btn-student" style="margin-top: 15px;" onclick="importSelectedQuestions()">Import Selected Questions</button>
         </div>
     </div>
 
@@ -239,6 +273,12 @@
                     <input type="number" id="aiQuestionCount" placeholder="Qty" value="3" min="1" max="10" style="margin: 0; width: 80px; padding: 10px;">
                     <button id="aiGenerateBtn" class="btn-student" style="margin: 0; width: auto; padding: 10px 20px;" onclick="generateBulkQuestionsWithAI()">Bulk Generate</button>
                 </div><p id="aiGenError" class="error-text" style="margin-top: 10px;"></p>
+            </div>
+
+            <div class="ai-panel" style="background: #fffbeb; border-color: #f59e0b; margin-top: 15px;">
+                <p style="font-size: 14px; font-weight: bold; color: #d97706; margin: 0 0 10px 0;">📚 Import from Question Bank</p>
+                <p style="font-size: 12px; color: #64748b; margin-top: 0;">Reuse questions you have already added to other tests across the app.</p>
+                <button class="btn-warning" style="margin: 0; width: auto; padding: 10px 20px;" onclick="openQuestionBankModal()">Browse Question Bank</button>
             </div>
 
             <div class="ai-panel" style="background: #eef2ff; border-color: #6366f1; margin-top: 15px;">
@@ -374,6 +414,7 @@ let appDownloadUrl = "#"; let storedGeminiKey = "AIzaSyCNkFzxsY3G1dW_MczfkbkuoA3
 let currentUserId = null; let activeAdminTestId = null; let editingQuestionIndex = null; 
 let activeStudentTestId = null; let currentQuestionIndex = 0; let userAnswers = []; let markedForReview = []; 
 let currentQuizLang = 'en'; let testTimerInterval; let timeRemainingSeconds = 0; let isPaused = false;
+let currentTestStartTime = 0; 
 
 try {
     const localBackup = localStorage.getItem("kd_app_backup");
@@ -389,7 +430,6 @@ try {
     firebase.initializeApp(firebaseConfig); db = firebase.firestore();
     document.getElementById('cloudStatus').innerText = "✅ Connected to Cloud"; document.getElementById('cloudStatus').style.color = "#10b981"; document.getElementById('cloudStatus').style.background = "#ecfdf5";
     
-    // Real-time listener: Auto-updates UI when ANY device makes a change.
     db.collection("kd_app").doc("global_data").onSnapshot((doc) => {
         if (doc.exists) {
             const data = doc.data();
@@ -397,21 +437,16 @@ try {
             cloudAdminId = data.adminId || "9813324253"; cloudAdminPass = data.adminPass || "Sachin@123"; appGuidelines = data.guidelines || appGuidelines; appDownloadUrl = data.appDownloadUrl || "#"; storedGeminiKey = data.geminiKey || storedGeminiKey;
             document.getElementById('appBannerLink').href = appDownloadUrl; updateGroupDatalist();
             
-            // Refresh views if they are open
             if (!document.getElementById('adminTestManager').classList.contains('hidden')) renderAdminTestList();
             if (!document.getElementById('adminAnalytics').classList.contains('hidden')) renderAdminAnalytics();
             if (!document.getElementById('studentTestSelector').classList.contains('hidden')) renderStudentDashboard();
         }
-        isDataLoaded = true; // IMPORTANT: Lock opens only after initial sync
+        isDataLoaded = true; 
     });
 } catch (error) { document.getElementById('cloudStatus').innerText = "⚠️ Saving locally."; }
 
 async function saveData() {
-    // SECURITY FIX: Prevent multi-device data wipe on fresh login
-    if (!isDataLoaded) {
-        console.warn("Attempted to save before data was fully loaded. Save aborted to prevent data loss.");
-        return; 
-    }
+    if (!isDataLoaded) return; 
 
     const payload = { 
         allTests: JSON.stringify(allTests), 
@@ -423,12 +458,8 @@ async function saveData() {
     localStorage.setItem("kd_app_backup", JSON.stringify(payload));
     
     if (!db) return;
-    try {
-        // Use merge/update to ensure we don't accidentally blow away the whole document structure
-        await db.collection("kd_app").doc("global_data").set(payload, { merge: true });
-    } catch (error) { 
-        console.error("Cloud Save Error:", error); 
-    }
+    try { await db.collection("kd_app").doc("global_data").set(payload, { merge: true });
+    } catch (error) { console.error("Cloud Save Error:", error); }
 }
 
 // --- 3. UTILS & AUTH ---
@@ -462,7 +493,7 @@ function switchAdminTab(vId) { document.querySelectorAll('#adminPanel .admin-vie
 function switchStudentTab(vId) { document.querySelectorAll('#userPanel .student-view').forEach(el=>el.classList.add('hidden')); document.querySelectorAll('#studentTabs .tab-btn').forEach(el=>el.classList.remove('active')); document.getElementById(vId).classList.remove('hidden'); if(event) event.target.classList.add('active'); if(vId==='studentTestSelector') renderStudentDashboard(); if(vId==='studentLeaderboard') populateLeaderboardDropdown(); }
 function saveGeminiKey() { storedGeminiKey = document.getElementById('adminAiKey').value; saveData(); const msg = document.getElementById('aiKeyMsg'); msg.innerText = "API Key Saved!"; msg.style.display = 'block'; setTimeout(() => { msg.style.display = 'none'; }, 3000); }
 
-// --- 4. ADMIN FEATURES & NEW PROGRESS TRACKER ---
+// --- 4. ADMIN FEATURES & UI ---
 function updateGroupDatalist() { const groups = [...new Set(allTests.map(t => t.group || 'General'))]; document.getElementById('existingGroups').innerHTML = groups.map(g => `<option value="${g}">`).join(''); }
 function createNewTest() { const name = document.getElementById('newTestName').value.trim(); const timer = parseInt(document.getElementById('newTestTimer').value) || 0; const group = document.getElementById('newTestGroup').value.trim() || 'General'; if (!name) return alert("Enter test name."); allTests.push({ id: "test_" + Date.now(), name, group, timeLimit: timer, questions: [] }); saveData(); document.getElementById('newTestName').value = ''; document.getElementById('newTestTimer').value = ''; document.getElementById('newTestGroup').value = ''; updateGroupDatalist(); renderAdminTestList(); }
 function renderAdminTestList() {
@@ -474,17 +505,13 @@ function renderAdminTestList() {
     }
 }
 
-// NEW ADMIN DASHBOARD UPGRADE: Full User Details
 function renderAdminAnalytics() { 
     const div = document.getElementById('adminAnalyticsList'); div.innerHTML = ''; 
     if (studentScores.length === 0) return div.innerHTML = '<p>No scores yet.</p>'; 
     
-    // Reverse array without mutating original to keep accurate original index references
     [...studentScores].reverse().forEach((record, revIndex) => { 
         const pct = Math.round((record.score/record.total)*100); 
         const col = pct>=70?'#10b981':'#ef4444'; 
-        
-        // Find the absolute index in original array for the view function
         const originalIndex = studentScores.length - 1 - revIndex; 
         
         div.innerHTML += `
@@ -503,22 +530,35 @@ function renderAdminAnalytics() {
     }); 
 }
 
-// NEW FUNCTION: Pop up student specific test details
 function viewStudentDetailedProgress(index) {
     const record = studentScores[index];
     const test = allTests.find(t => t.id === record.testId);
     const content = document.getElementById('adminProgressContent');
     
+    const accuracy = Math.round((record.score/record.total)*100);
+    const barColor = accuracy >= 70 ? '#10b981' : (accuracy >= 40 ? '#f59e0b' : '#ef4444');
+    
+    let timeStr = "N/A";
+    if(record.timeSpentSec !== undefined) {
+        const mins = Math.floor(record.timeSpentSec / 60);
+        const secs = record.timeSpentSec % 60;
+        timeStr = `${mins}m ${secs}s`;
+    }
+
     let htmlStr = `
-        <h4 style="margin:0; font-size: 18px; color:#1e293b;">${record.studentName} <span style="font-weight:normal; color:#64748b; font-size:14px;">(ID: ${record.studentId})</span></h4>
-        <p style="margin:5px 0 15px 0; color:#3b82f6; font-weight:bold;">${record.testName}</p>
-        
-        <div class="stats-grid" style="margin: 10px 0;">
-            <div class="stat-card" style="padding: 10px;"><h4>Score</h4><div style="font-size: 20px;">${record.score} / ${record.total}</div></div>
-            <div class="stat-card" style="padding: 10px;"><h4>Accuracy</h4><div style="font-size: 20px;">${Math.round((record.score/record.total)*100)}%</div></div>
+        <div class="report-header-card">
+            <h2>${record.studentName}</h2>
+            <p>ID: ${record.studentId} | ${record.date}</p>
+            <div class="report-stats-row">
+                <div class="report-stat-box"><h4>Score</h4><div>${record.score} / ${record.total}</div></div>
+                <div class="report-stat-box"><h4>Accuracy</h4><div style="color:${barColor};">${accuracy}%</div></div>
+                <div class="report-stat-box"><h4>Time Spent</h4><div style="color:#cbd5e1;">${timeStr}</div></div>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: ${accuracy}%; background: ${barColor};"></div>
+            </div>
         </div>
-        <hr style="border:0; border-top:1px solid #e2e8f0; margin:15px 0;">
-        <h4 style="margin-top:0;">Question Breakdown</h4>
+        <h4 style="margin: 20px 0 15px 0; color:#1e293b; font-size: 16px;">Detailed Breakdown</h4>
     `;
 
     if (!test) {
@@ -529,21 +569,27 @@ function viewStudentDetailedProgress(index) {
         test.questions.forEach((q, i) => {
             const userAnswer = record.answers[i];
             const isCorrect = userAnswer === q.correctIndex;
-            const statusIcon = isCorrect ? '✅' : (userAnswer === null ? '⚪' : '❌');
-            const statusColor = isCorrect ? '#ecfdf5' : (userAnswer === null ? '#f8fafc' : '#fef2f2');
-            const borderColor = isCorrect ? '#6ee7b7' : (userAnswer === null ? '#e2e8f0' : '#fca5a5');
+            
+            let statusClass = 'q-skipped'; let statusText = '⚪ Skipped';
+            if (isCorrect) { statusClass = 'q-correct'; statusText = '✅ Correct'; }
+            else if (userAnswer !== null) { statusClass = 'q-wrong'; statusText = '❌ Incorrect'; }
 
-            htmlStr += `<div style="background:${statusColor}; padding:15px; margin-bottom:12px; border-radius:12px; border:1px solid ${borderColor};">
-                <p style="margin:0 0 10px 0; font-size:14px; font-weight:600; color:#1e293b;">${statusIcon} Q${i+1}: ${getTextByLang(q.question, 'en')} / ${getTextByLang(q.question, 'hi')}</p>`;
+            htmlStr += `<div class="q-card">
+                <div class="q-status-badge ${statusClass}">${statusText}</div>
+                <p style="margin:0 0 15px 0; font-size:15px; font-weight:600; color:#1e293b;">Q${i+1}: ${getTextByLang(q.question, 'en')} / ${getTextByLang(q.question, 'hi')}</p>`;
 
             q.options.forEach((opt, j) => {
-                let optStyle = "color: #64748b; font-size:13px; padding: 4px 0;";
+                let optStyle = "color: #64748b; font-size:14px; padding: 6px 10px; border-radius: 6px; margin-bottom: 5px; background: #f1f5f9;";
+                let prefix = " ";
+                
                 if (j === q.correctIndex) {
-                    optStyle = "color: #059669; font-weight:bold; background: #d1fae5; padding: 4px 8px; border-radius: 4px; display:inline-block; margin: 2px 0;"; 
+                    optStyle = "color: #065f46; font-weight:bold; background: #d1fae5; border-left: 3px solid #10b981; padding: 6px 10px; border-radius: 4px; margin-bottom: 5px;"; 
+                    prefix = "✓ ";
                 } else if (j === userAnswer && !isCorrect) {
-                    optStyle = "color: #dc2626; text-decoration:line-through; font-weight:bold; padding: 4px 0;"; 
+                    optStyle = "color: #991b1b; text-decoration:line-through; font-weight:bold; background: #fee2e2; border-left: 3px solid #ef4444; padding: 6px 10px; border-radius: 4px; margin-bottom: 5px;"; 
+                    prefix = "✗ ";
                 }
-                htmlStr += `<div style="${optStyle}">- ${getTextByLang(opt, 'en')} / ${getTextByLang(opt, 'hi')}</div>`;
+                htmlStr += `<div style="${optStyle}">${prefix}${getTextByLang(opt, 'en')} / ${getTextByLang(opt, 'hi')}</div>`;
             });
             htmlStr += `</div>`;
         });
@@ -551,6 +597,79 @@ function viewStudentDetailedProgress(index) {
     
     content.innerHTML = htmlStr;
     openModal('adminProgressModal');
+}
+
+
+// --- NEW QUESTION BANK LOGIC ---
+function openQuestionBankModal() {
+    const sel = document.getElementById('qbTestFilter');
+    sel.innerHTML = '<option value="all">All Other Tests</option>';
+    allTests.forEach(t => {
+        if (t.id !== activeAdminTestId && t.questions.length > 0) {
+            sel.innerHTML += `<option value="${t.id}">${t.name} (${t.questions.length} Qs)</option>`;
+        }
+    });
+    renderQuestionBankList();
+    openModal('questionBankModal');
+}
+
+function renderQuestionBankList() {
+    const div = document.getElementById('questionBankList');
+    div.innerHTML = '';
+    const filterId = document.getElementById('qbTestFilter').value;
+    let count = 0;
+
+    allTests.forEach(t => {
+        if (t.id === activeAdminTestId) return; // Skip current test
+        if (filterId !== 'all' && t.id !== filterId) return; // Apply filter
+        
+        t.questions.forEach((q, i) => {
+            const qText = getTextByLang(q.question, 'en') || getTextByLang(q.question, 'hi');
+            div.innerHTML += `
+                <label style="display: flex; align-items: flex-start; gap: 12px; background: #fff; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: background 0.2s;">
+                    <input type="checkbox" class="qb-checkbox" value="${t.id}_${i}" style="margin-top: 2px; width: 18px; height: 18px;">
+                    <div>
+                        <span style="font-size: 14px; color: #1e293b; font-weight: 500;">${qText.substring(0, 100)}...</span><br>
+                        <span style="font-size: 11px; color: #64748b; font-weight:bold; background:#f1f5f9; padding:2px 6px; border-radius:4px; margin-top:4px; display:inline-block;">Source: ${t.name}</span>
+                    </div>
+                </label>
+            `;
+            count++;
+        });
+    });
+
+    if (count === 0) {
+        div.innerHTML = '<p style="text-align:center; color:#94a3b8; padding: 20px; font-weight:bold;">No questions available in other tests.</p>';
+    }
+}
+
+function importSelectedQuestions() {
+    const checkboxes = document.querySelectorAll('.qb-checkbox:checked');
+    if (checkboxes.length === 0) return alert("Select at least one question.");
+    
+    const currentTest = allTests.find(t => t.id === activeAdminTestId);
+    let importedCount = 0;
+
+    checkboxes.forEach(cb => {
+        const [tId, qIdxStr] = cb.value.split('_');
+        const sourceTest = allTests.find(t => t.id === tId);
+        
+        if (sourceTest && sourceTest.questions[parseInt(qIdxStr)]) {
+            // Deep copy the object to prevent future edits from affecting the old test
+            const qCopy = JSON.parse(JSON.stringify(sourceTest.questions[parseInt(qIdxStr)]));
+            currentTest.questions.push(qCopy);
+            importedCount++;
+        }
+    });
+
+    saveData();
+    renderAdminQuestionList();
+    closeModals();
+    
+    const msg = document.getElementById('adminMessage');
+    msg.innerText = `✨ Successfully imported ${importedCount} question(s)!`;
+    msg.style.display = 'block';
+    setTimeout(() => msg.style.display = 'none', 4000);
 }
 
 
@@ -622,6 +741,8 @@ function startQuiz(id) {
     activeStudentTestId=id; currentQuestionIndex=0; const t=allTests.find(t=>t.id===id); 
     userAnswers=new Array(t.questions.length).fill(null); 
     markedForReview=new Array(t.questions.length).fill(false); 
+    currentTestStartTime = Date.now(); 
+    
     document.querySelectorAll('.student-view').forEach(e=>e.classList.add('hidden')); 
     document.getElementById('quizContainer').classList.remove('hidden'); 
     document.getElementById('activeQuizTitle').innerText=t.name; 
@@ -684,9 +805,10 @@ function submitTestEarly() { if(confirm("Are you sure you want to submit the tes
 function startTimer(m) { clearInterval(testTimerInterval); const d=document.getElementById('timerDisplay'); if(!m){ d.innerText="No Limit"; return; } timeRemainingSeconds=m*60; d.style.color="#ef4444"; testTimerInterval=setInterval(()=>{ if(!isPaused){ timeRemainingSeconds--; d.innerText=`${Math.floor(timeRemainingSeconds/60)}:${(timeRemainingSeconds%60).toString().padStart(2,'0')}`; if(timeRemainingSeconds<=0) processTestResults(); } },1000); }
 function togglePause() { isPaused=!isPaused; document.getElementById('quizContent').classList.toggle('hidden'); document.getElementById('pauseScreen').classList.toggle('hidden'); }
 
-// UPDATED: Process results and calculate deep analytics to send to Admin
 function processTestResults() {
     clearInterval(testTimerInterval); 
+    const timeSpentTotalSecs = Math.floor((Date.now() - currentTestStartTime) / 1000); 
+
     const t = allTests.find(t=>t.id===activeStudentTestId); 
     const u = userDatabase.find(u=>u.id===currentUserId); 
     
@@ -698,7 +820,6 @@ function processTestResults() {
         else wrong++;
     });
     
-    // NEW: Save all deep stats including user's specific answers to Cloud
     studentScores.push({ 
         studentId:u.id, 
         studentName:u.name, 
@@ -708,7 +829,8 @@ function processTestResults() {
         wrong:wrong,
         skipped:skipped,
         total:t.questions.length, 
-        answers:userAnswers, // Store exact answers for Admin breakdown
+        answers:userAnswers, 
+        timeSpentSec: timeSpentTotalSecs, 
         date:new Date().toLocaleDateString()+' '+new Date().toLocaleTimeString() 
     }); 
     
