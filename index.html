@@ -99,14 +99,6 @@
       <button onclick="addQuestion()">Add Question</button>
       <button onclick="manageTests()">Manage Tests</button>
       <button onclick="viewStudents()">View Students</button>
-      <button onclick="manageApiKeys()">Manage API Keys</button>
-      <button onclick="goBack()">Back</button>
-    </div>
-    <div id="manage-api-keys" class="form" style="display: none;">
-      <h1>Manage API Keys</h1>
-      <input type="text" id="api-key" placeholder="API Key">
-      <button onclick="addApiKey()">Add API Key</button>
-      <button onclick="updateApiKey()">Update API Key</button>
       <button onclick="goBack()">Back</button>
     </div>
   </div>
@@ -136,38 +128,63 @@
 
     let currentUser = null;
     let currentPage = 'login';
-    let apiKey = "AIzaSyCMMrrl7q2pOVxa_XRwQAkPIKPvzM_wd1g";
 
     function showPage(page) {
       document.getElementById('login').style.display = 'none';
       document.getElementById('register').style.display = 'none';
       document.getElementById('admin').style.display = 'none';
       document.getElementById('admin-dashboard').style.display = 'none';
-      document.getElementById('manage-api-keys').style.display = 'none';
       document.getElementById(page).style.display = 'block';
       currentPage = page;
     }
 
     function goBack() {
-      // Go back to previous page
       window.history.back();
     }
 
     function login() {
-      // Login logic here
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      signInWithEmailAndPassword(auth, username, password)
+        .then((userCredential) => {
+          currentUser = userCredential.user;
+          showPage('student-dashboard');
+        })
+        .catch((error) => {
+          console.error(error);
+        });
     }
 
     function register() {
-      // Register logic here
+      const username = document.getElementById('reg-username').value;
+      const password = document.getElementById('reg-password').value;
+      const email = document.getElementById('reg-email').value;
+      createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          currentUser = userCredential.user;
+          set(ref(database, 'users/' + currentUser.uid), {
+            username: username,
+            email: email
+          });
+          showPage('student-dashboard');
+        })
+        .catch((error) => {
+          console.error(error);
+        });
     }
 
     function adminLogin() {
-      // Admin login logic here
-      showPage('admin-dashboard');
+      const username = document.getElementById('admin-username').value;
+      const password = document.getElementById('admin-password').value;
+      if (username === 'admin' && password === 'Sachin@123') {
+        showPage('admin-dashboard');
+      } else {
+        alert('Invalid username or password');
+      }
     }
 
     function addQuestion() {
-      showPage('add-question');
+      // Add question logic here
     }
 
     function manageTests() {
@@ -176,26 +193,6 @@
 
     function viewStudents() {
       // View students logic here
-    }
-
-    function manageApiKeys() {
-      showPage('manage-api-keys');
-    }
-
-    function addApiKey() {
-      const newApiKey = document.getElementById('api-key').value;
-      // Add API key to database
-      set(ref(database, 'apiKeys/' + newApiKey), true);
-      apiKey = newApiKey;
-    }
-
-    function updateApiKey() {
-      const newApiKey = document.getElementById('api-key').value;
-      // Update API key in database
-      update(ref(database, 'apiKeys'), {
-        [newApiKey]: true
-      });
-      apiKey = newApiKey;
     }
   </script>
 </body>
