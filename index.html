@@ -1,981 +1,202 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>kd test - Cloud App</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-
-    <style>
-        /* --- MODERNIZED CSS --- */
-        body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
-            color: #2c3e50; 
-            display: flex; flex-direction: column; align-items: center; 
-            padding: 20px; padding-top: 60px; 
-            margin: 0; min-height: 100vh; 
-        }
-
-        /* --- CUSTOM SCROLLBAR --- */
-        ::-webkit-scrollbar { width: 10px; height: 10px; }
-        ::-webkit-scrollbar-track { background: #f8fafc; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; border: 2px solid #f8fafc; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .modal-box::-webkit-scrollbar, .guidelines-box::-webkit-scrollbar { width: 8px; }
-
-        .app-banner {
-            position: fixed; top: 0; left: 0; width: 100%; 
-            background: #1e293b; color: white; text-align: center; 
-            padding: 12px 0; z-index: 2000; font-size: 14px; font-weight: 500;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .app-banner a {
-            color: #38bdf8; font-weight: bold; text-decoration: none; 
-            margin-left: 5px; padding: 4px 12px; background: rgba(255,255,255,0.1);
-            border-radius: 20px; transition: all 0.2s;
-        }
-        .app-banner a:hover { background: #38bdf8; color: #0f172a; }
-        
-        .container { 
-            background: #ffffff; padding: 40px; border-radius: 20px; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.08); width: 100%; max-width: 800px; 
-            margin-top: 20px; animation: slideUp 0.4s ease-out forwards; 
-        }
-        
-        .landing-container { max-width: 450px; text-align: center; margin-top: 5vh; }
-        .hidden { display: none !important; }
-        
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        input[type="text"], input[type="password"], input[type="number"], select, textarea, input[type="file"] { 
-            width: 100%; padding: 14px; margin: 10px 0 18px 0; 
-            border: 2px solid #e2e8f0; border-radius: 12px; box-sizing: border-box; font-size: 15px; font-family: inherit; 
-            transition: all 0.3s ease; background: #f8fafc; color: #334155;
-        }
-        input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-        
-        .password-container { position: relative; width: 100%; }
-        .password-container input { padding-right: 45px; }
-        .toggle-password { position: absolute; right: 15px; top: 40%; transform: translateY(-50%); cursor: pointer; color: #94a3b8; }
-
-        button { 
-            background-color: #3b82f6; color: white; border: none; padding: 14px 20px; border-radius: 12px; cursor: pointer; 
-            width: 100%; font-size: 16px; font-weight: 600; margin-top: 5px; transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(59,130,246,0.2);
-        }
-        button:hover { background-color: #2563eb; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(59,130,246,0.3); }
-        button:active { transform: translateY(0); }
-        button:disabled { background-color: #cbd5e1; cursor: not-allowed; box-shadow: none; transform: none; }
-        
-        .btn-admin { background-color: #ef4444; box-shadow: 0 4px 6px rgba(239,68,68,0.2); } 
-        .btn-admin:hover { background-color: #dc2626; box-shadow: 0 6px 12px rgba(239,68,68,0.3); }
-        .btn-student { background-color: #10b981; box-shadow: 0 4px 6px rgba(16,185,129,0.2); margin-bottom: 15px;} 
-        .btn-student:hover { background-color: #059669; box-shadow: 0 6px 12px rgba(16,185,129,0.3); }
-        .btn-warning { background-color: #f59e0b; color: white; box-shadow: 0 4px 6px rgba(245,158,11,0.2); } 
-        .btn-warning:hover { background-color: #d97706; }
-        .btn-secondary { background-color: #94a3b8; box-shadow: none; } 
-        .btn-secondary:hover { background-color: #64748b; }
-        .btn-logout { background-color: transparent; color: #ef4444; border: 2px solid #ef4444; box-shadow: none; } 
-        .btn-logout:hover { background-color: #ef4444; color: white; }
-
-        .text-link { color: #3b82f6; cursor: pointer; font-size: 14px; text-decoration: none; font-weight: 600; margin-top: 15px; display: inline-block; }
-        .text-link:hover { text-decoration: underline; color: #2563eb; }
-        .error-text { color: #ef4444; font-size: 14px; margin-top: -10px; margin-bottom: 15px; display: none; font-weight: 500; }
-        .success-text { color: #10b981; font-size: 14px; margin-top: 10px; display: none; text-align: center; font-weight: bold; }
-
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 3000; }
-        .modal-box { background: white; padding: 40px 30px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); width: 360px; max-height: 90vh; overflow-y: auto; text-align: center; }
-
-        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; margin-bottom: 20px; }
-        .section-title { font-size: 1.2em; color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 20px; font-weight: 600; }
-        
-        .tab-container { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; flex-wrap: wrap; justify-content: center; }
-        .tab-btn { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; width: auto; padding: 10px 20px; font-size: 14px; margin: 0; border-radius: 12px; font-weight: 600; transition: all 0.2s ease;}
-        .tab-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; box-shadow: 0 4px 10px rgba(59,130,246,0.3); }
-        .tab-btn:hover:not(.active) { background: #e2e8f0; color: #1e293b; }
-
-        .list-item { display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 16px 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.2s ease; }
-        .list-item:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.05); border-color: #cbd5e1; }
-        .grid-row { display: grid; grid-template-columns: 2fr 3fr 1fr; align-items: center; gap: 15px; }
-        
-        .group-heading { background: #f1f5f9; color: #475569; padding: 8px 15px; border-radius: 8px; font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin: 25px 0 10px 0; border-left: 4px solid #3b82f6; }
-        .action-buttons { display: flex; gap: 8px; justify-content: flex-end; }
-        .action-buttons button { width: auto; margin: 0; padding: 8px 14px; font-size: 13px; border-radius: 8px; }
-        .guidelines-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; height: 100px; overflow-y: auto; text-align: left; font-size: 13px; color: #64748b; margin-bottom: 15px; line-height: 1.5; }
-        
-        .option-label { display: block; background: #fff; margin: 10px 0; padding: 15px; border-radius: 12px; cursor: pointer; border: 2px solid #e2e8f0; transition: all 0.2s ease; font-size: 15px; font-weight: 500; color: #334155; }
-        .option-label:hover { background: #f8fafc; border-color: #94a3b8; }
-        
-        .quiz-control-bar { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 15px 20px; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
-        .timer-display { font-size: 1.5em; font-weight: bold; color: #ef4444; font-family: monospace; letter-spacing: 1px; }
-        
-        .review-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 25px; margin-bottom: 20px; text-align: left; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        .review-option { padding: 14px; margin: 8px 0; border-radius: 10px; border: 1px solid #e2e8f0; background: #f8fafc; font-size: 14px; }
-        .review-correct { background: #ecfdf5; border-color: #6ee7b7; color: #065f46; font-weight: 600; }
-        .review-wrong { background: #fef2f2; border-color: #fca5a5; color: #991b1b; text-decoration: line-through; }
-
-        .rank-badge { display: inline-block; min-width: 30px; text-align: center; background: #f1c40f; color: #000; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; }
-        .rank-1 { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); color: #fff; box-shadow: 0 4px 10px rgba(246, 211, 101, 0.4);} 
-        .rank-2 { background: linear-gradient(135deg, #e2e2e2 0%, #9f9f9f 100%); color: #fff; } 
-        .rank-3 { background: linear-gradient(135deg, #d4a373 0%, #a26a42 100%); color: #fff; } 
-
-        .lang-toggle { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; padding: 10px; background: #f8fafc; border-radius: 30px; border: 1px solid #e2e8f0; }
-        .lang-toggle label { cursor: pointer; font-weight: bold; color: #475569; font-size: 14px; display: flex; align-items: center; gap: 5px; }
-
-        .ai-panel { background: #f0fdf4; border: 1px dashed #10b981; padding: 20px; border-radius: 16px; margin-bottom: 25px; }
-        .responsive-img { max-width: 100%; max-height: 250px; border-radius: 8px; margin: 15px auto; display: block; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: zoom-in; }
-        #lightboxModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; cursor: zoom-out; }
-
-        .palette-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; max-height: 150px; overflow-y: auto; justify-content: center;}
-        .palette-btn { width: 38px; height: 38px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.2s; margin: 0; padding: 0;}
-        .pal-unanswered { background: #e2e8f0; color: #475569; }
-        .pal-unanswered:hover { background: #cbd5e1; }
-        .pal-answered { background: #10b981; color: white; box-shadow: 0 2px 4px rgba(16,185,129,0.3);}
-        .pal-marked { background: #f59e0b; color: white; box-shadow: 0 2px 4px rgba(245,158,11,0.3);}
-        .pal-active { outline: 3px solid #3b82f6; outline-offset: 2px; transform: scale(1.1); z-index: 10;}
-
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 25px 0; }
-        .stat-card { background: #f8fafc; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02);}
-        .stat-card h4 { margin: 0 0 5px 0; color: #64748b; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;}
-        .stat-card div { font-size: 28px; font-weight: 800; }
-        @media(min-width: 600px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
-        
-        .progress-stat { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; margin-right: 5px; margin-top: 5px; }
-
-        /* --- ADMIN PROGRESS REPORT STYLES --- */
-        .report-header-card { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 25px; border-radius: 16px; margin-bottom: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-        .report-header-card h2 { margin: 0 0 5px 0; font-size: 22px; color: #fff; }
-        .report-header-card p { margin: 0; color: #94a3b8; font-size: 14px; }
-        .report-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
-        .report-stat-box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-        .report-stat-box h4 { margin: 0 0 5px 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; }
-        .report-stat-box div { font-size: 22px; font-weight: bold; color: #38bdf8; }
-        
-        .progress-bar-bg { width: 100%; background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; margin-top: 20px; overflow: hidden; }
-        .progress-bar-fill { height: 100%; background: #10b981; border-radius: 4px; transition: width 1s ease-out; }
-
-        .q-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 15px; transition: all 0.2s; }
-        .q-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .q-status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 15px; }
-        .q-correct { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
-        .q-wrong { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-        .q-skipped { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KD JAAT</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f0f0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      background-color: #4CAF50;
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+    .nav {
+      background-color: #333;
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+    }
+    .nav a {
+      color: #fff;
+    }
+    .nav a:hover {
+      color: #ccc;
+    }
+    .form {
+      padding: 20px;
+    }
+    .form input {
+      width: 100%;
+      height: 40px;
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    .form button {
+      width: 100%;
+      height: 40px;
+      background-color: #4CAF50;
+      color: #fff;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .form button:hover {
+      background-color: #3e8e41;
+    }
+  </style>
 </head>
 <body>
-
-    <div class="app-banner">Download our app <a id="appBannerLink" href="#" target="_blank">Get App</a></div>
-    <div id="lightboxModal" class="hidden" onclick="closeLightbox()"><img id="lightboxImg" src=""></div>
-
-    <div id="landingPage" class="container landing-container">
-        <h1 style="color: #3b82f6; margin-top: 0; font-size: 2.8em; font-weight: 800; letter-spacing: -1px;">kd test</h1>
-        <p style="color: #64748b; margin-bottom: 15px; font-size: 1.1em;">The Modern Learning Portal</p>
-        <p id="cloudStatus" style="font-size: 13px; color: #ef4444; font-weight: 600; margin-bottom: 25px; padding: 10px; border-radius: 10px; background: #fef2f2;">Connecting to Cloud Server...</p>
-        <button class="btn-student" onclick="openModal('studentLoginModal')">Student Portal</button>
-        <button class="btn-admin" onclick="openModal('adminLoginModal')">Admin Dashboard</button>
+  <div class="header">
+    <h1>KD JAAT</h1>
+  </div>
+  <div class="nav">
+    <a href="                                        
+    <a href="#" onclick="showPage('register')">Register</a>
+    <a href="                                        
+  </div>
+  <div class="container">
+    <div id="login" class="form" style="display: none;">
+      <h1>Login</h1>
+      <input type="text" id="username" placeholder="Username">
+      <input type="password" id="password" placeholder="Password">
+      <button onclick="login()">Login</button>
+      <button onclick="goBack()">Back</button>
     </div>
-
-    <div id="adminLoginModal" class="modal-overlay hidden">
-        <div class="modal-box">
-            <h3 style="color: #ef4444; margin-top: 0;">Admin Login</h3>
-            <input type="text" id="adminIdInput" placeholder="Admin ID">
-            <div class="password-container"><input type="password" id="adminPasswordInput" placeholder="Password"><span class="toggle-password" onclick="toggleVisibility('adminPasswordInput')">👁️</span></div>
-            <p id="adminError" class="error-text"></p>
-            <button class="btn-admin" onclick="verifyAdmin()">Access Dashboard</button><button class="btn-secondary" style="margin-top: 10px;" onclick="closeModals()">Cancel</button>
-        </div>
+    <div id="register" class="form" style="display: none;">
+      <h1>Register</h1>
+      <input type="text" id="reg-username" placeholder="Username">
+      <input type="password" id="reg-password" placeholder="Password">
+      <input type="email" id="reg-email" placeholder="Email">
+      <button onclick="register()">Register</button>
+      <button onclick="goBack()">Back</button>
     </div>
-    
-    <div id="studentLoginModal" class="modal-overlay hidden">
-        <div class="modal-box">
-            <h3 style="color: #10b981; margin-top: 0;">Student Login</h3>
-            <input type="number" id="loginId" placeholder="Student ID Number">
-            <div class="password-container"><input type="password" id="loginPass" placeholder="Password"><span class="toggle-password" onclick="toggleVisibility('loginPass')">👁️</span></div>
-            <p id="loginError" class="error-text"></p>
-            <button class="btn-student" onclick="verifyStudent()">Log In</button><button class="btn-secondary" style="margin-top: 10px;" onclick="closeModals()">Cancel</button>
-            <span class="text-link" onclick="openRegistration()">Create Account</span>
-        </div>
+    <div id="admin" class="form" style="display: none;">
+      <h1>Admin Login</h1>
+      <input type="text" id="admin-username" placeholder="Username">
+      <input type="password" id="admin-password" placeholder="Password">
+      <button onclick="adminLogin()">Login</button>
+      <button onclick="goBack()">Back</button>
     </div>
-
-    <div id="registerModal" class="modal-overlay hidden">
-        <div class="modal-box" style="width: 400px;">
-            <h3 style="color: #3b82f6; margin-top: 0;">Create Account</h3>
-            <input type="text" id="regName" placeholder="Full Name"><input type="number" id="regId" placeholder="Create ID Number">
-            <div class="password-container"><input type="password" id="regPass" placeholder="Create Password"><span class="toggle-password" onclick="toggleVisibility('regPass')">👁️</span></div>
-            <div id="regGuidelinesBox" class="guidelines-box">Loading guidelines...</div>
-            <label style="display:flex; align-items:center; gap:10px; font-size:14px; margin-bottom: 15px; cursor: pointer;"><input type="checkbox" id="acceptGuidelines" onchange="toggleRegButton()" style="width: 18px; height: 18px; margin:0;"> I accept the rules.</label>
-            <p id="regError" class="error-text"></p>
-            <button id="regSubmitBtn" class="btn-student" onclick="registerStudent()" disabled>Create Account</button><button class="btn-secondary" style="margin-top: 10px;" onclick="switchModal('registerModal', 'studentLoginModal')">Back</button>
-        </div>
+    <div id="admin-dashboard" class="form" style="display: none;">
+      <h1>Admin Dashboard</h1>
+      <button onclick="addQuestion()">Add Question</button>
+      <button onclick="manageTests()">Manage Tests</button>
+      <button onclick="viewStudents()">View Students</button>
+      <button onclick="manageApiKeys()">Manage API Keys</button>
+      <button onclick="goBack()">Back</button>
     </div>
-
-    <div id="adminProgressModal" class="modal-overlay hidden">
-        <div class="modal-box" style="width: 650px; max-width: 95vw; max-height: 85vh; padding: 30px;">
-            <div class="header-bar" style="border-bottom:none; margin-bottom:0;"><h3 style="color: #3b82f6; margin: 0; font-size:20px;">Performance Report</h3><button class="btn-logout" style="width:auto; padding: 6px 14px;" onclick="closeModals()">Close</button></div>
-            <div id="adminProgressContent" style="text-align: left; margin-top: 15px;"></div>
-        </div>
+    <div id="manage-api-keys" class="form" style="display: none;">
+      <h1>Manage API Keys</h1>
+      <input type="text" id="api-key" placeholder="API Key">
+      <button onclick="addApiKey()">Add API Key</button>
+      <button onclick="updateApiKey()">Update API Key</button>
+      <button onclick="goBack()">Back</button>
     </div>
+  </div>
 
-    <div id="questionBankModal" class="modal-overlay hidden">
-        <div class="modal-box" style="width: 700px; max-width: 95vw; height: 85vh; padding: 25px; display: flex; flex-direction: column;">
-            <div class="header-bar" style="border-bottom:none; margin-bottom:10px;">
-                <h3 style="color: #f59e0b; margin: 0; font-size:20px;">📚 Question Bank</h3>
-                <button class="btn-logout" style="width:auto; padding: 6px 14px;" onclick="closeModals()">Close</button>
-            </div>
-            <p style="text-align:left; color:#64748b; font-size:13px; margin-top:0;">Select questions from past tests to import into your current test.</p>
-            <select id="qbTestFilter" onchange="renderQuestionBankList()" style="margin: 0 0 15px 0; padding: 10px;"></select>
-            
-            <div id="questionBankList" style="flex-grow: 1; overflow-y: auto; text-align: left; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #f8fafc;">
-                </div>
-            
-            <button class="btn-student" style="margin-top: 15px;" onclick="importSelectedQuestions()">Import Selected Questions</button>
-        </div>
-    </div>
+  <script type="module">
+                              
+    import { initializeApp } from 'https:                                                     
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https:                                                      
+    import { getDatabase, ref, set, get, child, update } from 'https:                                                          
 
-    <div id="adminPanel" class="container hidden">
-        <div class="header-bar"><h2 style="margin: 0; color: #ef4444;">Admin Dashboard</h2><button class="btn-logout" style="width: auto; padding: 8px 18px;" onclick="logout()">Logout</button></div>
-        <div class="tab-container" id="adminTabs">
-            <button class="tab-btn active" onclick="switchAdminTab('adminAnalytics')">Global Analytics</button>
-            <button class="tab-btn" onclick="switchAdminTab('adminTestManager')">Manage Tests</button>
-            <button class="tab-btn" onclick="switchAdminTab('adminUserManager')">Users</button>
-            <button class="tab-btn" onclick="switchAdminTab('adminSettings')">Settings</button>
-        </div>
-
-        <div id="adminAnalytics" class="admin-view">
-            <h3 class="section-title">All Student Records</h3>
-            <div class="list-item" style="display: grid; grid-template-columns: 2fr 2fr 2fr auto; gap: 10px; background: #f8fafc; border: none; font-weight: bold; color: #64748b; padding: 10px 20px; margin-bottom: 5px;">
-                <div>Student</div><div>Test Taken</div><div>Stats</div><div style="text-align: right;">Action</div>
-            </div>
-            <div id="adminAnalyticsList"></div>
-        </div>
-
-        <div id="adminTestManager" class="admin-view hidden">
-            <h3 class="section-title">Create a New Test</h3>
-            <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
-                <input type="text" id="newTestName" placeholder="Test Name" style="margin: 0; flex-grow: 1; min-width: 200px;">
-                <input type="text" id="newTestGroup" placeholder="Group (e.g., Physics)" list="existingGroups" style="margin: 0; width: 180px;"><datalist id="existingGroups"></datalist>
-                <input type="number" id="newTestTimer" placeholder="Mins (0=None)" style="margin: 0; width: 130px;" min="0">
-            </div>
-            <button class="btn-admin" onclick="createNewTest()">Create Cloud Test</button>
-            <h3 class="section-title" style="margin-top: 35px;">Live Cloud Tests</h3><div id="adminTestList"></div>
-        </div>
-
-        <div id="adminQuestionEditor" class="admin-view hidden">
-            <button class="btn-secondary" style="margin-bottom: 20px; width: auto; font-size: 14px; padding: 8px 15px;" onclick="switchAdminTab('adminTestManager')">← Back to Tests</button>
-            <h3 class="section-title" id="editingTestTitle" style="color: #3b82f6;">Adding Questions to: </h3>
-            
-            <div class="ai-panel">
-                <p style="font-size: 14px; font-weight: bold; color: #059669; margin: 0 0 10px 0;">✨ Bulk Generate Questions with AI</p>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                    <input type="text" id="aiTopicInput" placeholder="e.g. Basic Electricity..." style="margin: 0; flex-grow: 1; min-width: 200px;">
-                    <select id="aiDifficultySelect" style="margin: 0; width: 110px; padding: 10px;"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select>
-                    <input type="number" id="aiQuestionCount" placeholder="Qty" value="3" min="1" max="10" style="margin: 0; width: 80px; padding: 10px;">
-                    <button id="aiGenerateBtn" class="btn-student" style="margin: 0; width: auto; padding: 10px 20px;" onclick="generateBulkQuestionsWithAI()">Bulk Generate</button>
-                </div><p id="aiGenError" class="error-text" style="margin-top: 10px;"></p>
-            </div>
-
-            <div class="ai-panel" style="background: #fffbeb; border-color: #f59e0b; margin-top: 15px;">
-                <p style="font-size: 14px; font-weight: bold; color: #d97706; margin: 0 0 10px 0;">📚 Import from Question Bank</p>
-                <p style="font-size: 12px; color: #64748b; margin-top: 0;">Reuse questions you have already added to other tests across the app.</p>
-                <button class="btn-warning" style="margin: 0; width: auto; padding: 10px 20px;" onclick="openQuestionBankModal()">Browse Question Bank</button>
-            </div>
-
-            <div class="ai-panel" style="background: #eef2ff; border-color: #6366f1; margin-top: 15px;">
-                <p style="font-size: 14px; font-weight: bold; color: #4338ca; margin: 0 0 10px 0;">📄 Auto-Extract from PDF (AI)</p>
-                <p style="font-size: 12px; color: #64748b; margin-top: 0;">Upload a PDF test. The AI will read it, extract up to 100 questions, and format them automatically.</p>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                    <input type="file" id="pdfUploadInput" accept="application/pdf" style="margin: 0; flex-grow: 1; padding: 10px; background: #fff;">
-                    <button id="pdfExtractBtn" class="btn-student" style="background: #4f46e5; margin: 0; width: auto; padding: 10px 20px;" onclick="extractQuestionsFromPDF()">Extract Questions</button>
-                </div><p id="pdfExtractMsg" style="font-size: 13px; font-weight: 600; margin-top: 10px; display: none;"></p>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; margin-top: 25px;"><input type="text" id="qTextEn" placeholder="Question (English)"><input type="text" id="qTextHi" placeholder="Question (Hindi)"></div>
-            <input type="file" id="qImageUpload" accept="image/*"><input type="hidden" id="qImageBase64"><img id="imagePreview" class="responsive-img hidden" src="" alt="Preview">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="text" id="opt0En" placeholder="Opt 1 (Eng)"><input type="text" id="opt0Hi" placeholder="Opt 1 (Hin)">
-                <input type="text" id="opt1En" placeholder="Opt 2 (Eng)"><input type="text" id="opt1Hi" placeholder="Opt 2 (Hin)">
-                <input type="text" id="opt2En" placeholder="Opt 3 (Eng)"><input type="text" id="opt2Hi" placeholder="Opt 3 (Hin)">
-                <input type="text" id="opt3En" placeholder="Opt 4 (Eng)"><input type="text" id="opt3Hi" placeholder="Opt 4 (Hin)">
-            </div>
-            <label style="display: block; margin-top: 15px; font-weight: bold;">Correct Answer:</label>
-            <select id="correctAnswer"><option value="0">Option 1</option><option value="1">Option 2</option><option value="2">Option 3</option><option value="3">Option 4</option></select>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button id="saveQuestionBtn" class="btn-admin" style="margin: 0;" onclick="addQuestionToTest()">Save Question</button><button id="cancelEditBtn" class="btn-secondary hidden" style="margin: 0; width: auto;" onclick="cancelEdit()">Cancel</button>
-            </div><p id="adminMessage" class="success-text"></p>
-            <h3 class="section-title" style="margin-top: 40px;">Questions in this Test</h3><div id="adminExistingQuestionsList"></div>
-        </div>
-
-        <div id="adminUserManager" class="admin-view hidden"><h3 class="section-title">Enrolled Students</h3><div id="adminUserList"></div></div>
-        <div id="adminSettings" class="admin-view hidden">
-            <h3 class="section-title">✨ AI Integration</h3>
-            <div class="password-container"><input type="password" id="adminAiKey" placeholder="Gemini API Key" value="AIzaSyCNkFzxsY3G1dW_MczfkbkuoA3nZhuPgsA"><span class="toggle-password" onclick="toggleVisibility('adminAiKey')">👁️</span></div>
-            <button class="btn-student" onclick="saveGeminiKey()">Save API Key</button><p id="aiKeyMsg" class="success-text"></p>
-            <h3 class="section-title" style="margin-top: 40px;">App Link & Guidelines</h3>
-            <input type="text" id="adminAppUrl" placeholder="App Download URL"><button class="btn-secondary" onclick="saveAppDownloadUrl()">Update Link</button>
-            <textarea id="editGuidelinesText" rows="4" style="margin-top:20px;"></textarea><button class="btn-secondary" onclick="saveAdminGuidelines()">Save Guidelines</button>
-        </div>
-    </div>
-
-    <div id="userPanel" class="container hidden">
-        <div class="header-bar"><h2 style="margin: 0; color: #10b981;">Student Dashboard</h2><button class="btn-logout" style="width: auto; padding: 8px 18px;" onclick="logout()">Logout</button></div>
-        <div class="tab-container" id="studentTabs">
-            <button class="tab-btn active" onclick="switchStudentTab('studentTestSelector')">My Tests</button>
-            <button class="tab-btn" onclick="switchStudentTab('studentLeaderboard')">Leaderboards</button>
-            <button class="tab-btn" onclick="switchStudentTab('studentSettings')">Settings</button>
-        </div>
-
-        <div id="studentTestSelector" class="student-view">
-            <p id="welcomeMessage" style="color: #1e293b; font-size: 1.2em; font-weight: bold; margin-top: 0;"></p>
-            <h3 class="section-title">Available Tests</h3><div id="studentTestList"></div>
-            <h3 class="section-title" style="margin-top: 40px;">My History</h3>
-            <div class="list-item grid-row" style="background: #f8fafc; border: none; font-weight: bold; color: #64748b; padding: 10px 20px; margin-bottom: 5px;"><div>Test Name</div><div>Date</div><div style="text-align: right;">Score</div></div>
-            <div id="studentHistoryList"></div>
-        </div>
-
-        <div id="studentLeaderboard" class="student-view hidden">
-            <h3 class="section-title">Global Rankings</h3><select id="leaderboardTestSelect" onchange="renderLeaderboardData()"><option value="">Select a test...</option></select><div id="leaderboardResults" style="margin-top: 20px;"></div>
-        </div>
-
-        <div id="studentSettings" class="student-view hidden">
-            <h3 class="section-title">Change Password</h3><input type="password" id="newStudentPass" placeholder="Enter New Password"><button class="btn-student" onclick="updateStudentPassword()">Update</button><p id="studentPassMsg" class="success-text"></p>
-        </div>
-
-        <div id="quizContainer" class="student-view hidden">
-            <div class="quiz-control-bar">
-                <div><span style="font-size: 13px; color: #64748b; font-weight: 600;">Time Remaining</span><br><span id="timerDisplay" class="timer-display">--:--</span></div>
-                <div class="action-buttons"><button id="pauseBtn" class="btn-warning" onclick="togglePause()">Pause</button><button class="btn-student" onclick="submitTestEarly()">Submit</button></div>
-            </div>
-
-            <h3 id="activeQuizTitle" class="section-title" style="text-align: center; border:none; color: #3b82f6;"></h3>
-            
-            <div class="lang-toggle">
-                <label><input type="radio" name="quizLang" value="en" checked onchange="setQuizLanguage('en')"> English</label>
-                <label><input type="radio" name="quizLang" value="hi" onchange="setQuizLanguage('hi')"> Hindi</label>
-            </div>
-
-            <div id="pauseScreen" class="hidden" style="text-align:center; padding: 40px;"><h2 style="color: #f59e0b;">Test Paused</h2><button class="btn-student" style="width:auto;" onclick="togglePause()">Resume</button></div>
-
-            <div id="quizContent">
-                <div id="questionPalette" class="palette-grid"></div>
-
-                <p id="questionCountText" style="font-size: 14px; font-weight: bold; color: #64748b;"></p>
-                <p id="questionDisplay" style="font-size: 1.3em; font-weight: 600;"></p>
-                <img id="questionImageDisplay" class="responsive-img hidden" src="" onclick="openLightbox(this.src)">
-                <div id="optionsDisplay" style="margin-top: 25px;"></div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 30px; gap: 10px; flex-wrap: wrap;">
-                    <button id="prevBtn" class="btn-secondary" style="width: auto; margin:0; padding: 12px 25px;" onclick="navigateQuestion(-1)">Previous</button>
-                    <button id="markReviewBtn" class="btn-warning" style="width: auto; margin:0; padding: 12px 25px;" onclick="toggleMarkForReview()">Mark Review</button>
-                    <button id="nextBtn" class="btn-student" style="width: auto; margin:0; padding: 12px 25px; flex-grow: 1;" onclick="navigateQuestion(1)">Next</button>
-                </div>
-            </div>
-        </div>
-        
-        <div id="resultContainer" class="student-view hidden" style="text-align: center;">
-            <h2 id="scoreDisplay" style="color: #3b82f6; font-size: 3.5em; margin: 0;"></h2>
-            <p id="scorePercentage" style="font-weight: bold; font-size: 1.3em; margin-top: 5px;"></p>
-            
-            <div class="stats-grid">
-                <div class="stat-card"><h4>Correct</h4><div id="resCorrect" style="color:#10b981">0</div></div>
-                <div class="stat-card"><h4>Wrong</h4><div id="resWrong" style="color:#ef4444">0</div></div>
-                <div class="stat-card"><h4>Skipped</h4><div id="resSkipped" style="color:#94a3b8">0</div></div>
-                <div class="stat-card" style="background: #eff6ff; border-color: #bfdbfe;"><h4>Your Rank</h4><div id="resRank" style="color:#3b82f6">#0</div></div>
-            </div>
-
-            <h3 class="section-title" style="margin-top: 40px;">Detailed Review</h3>
-            <div class="lang-toggle">
-                <label><input type="radio" name="reviewLang" value="en" checked onchange="setReviewLanguage('en')"> English</label>
-                <label><input type="radio" name="reviewLang" value="hi" onchange="setReviewLanguage('hi')"> Hindi</label>
-            </div>
-            <div id="reviewList"></div>
-            <button class="btn-student" onclick="switchStudentTab('studentTestSelector')">Back to Dashboard</button>
-        </div>
-    </div>
-
-    <script>
-        
-// --- 1. CONFIG & DATA LOAD ---
-const firebaseConfig = {
-    apiKey: "AIzaSyBDPdbSyP8WD70CCPwbMA9sPtOK9XLejbQ",
-    authDomain: "test2-672e5.firebaseapp.com",
-    projectId: "test2-672e5",
-    storageBucket: "test2-672e5.firebasestorage.app",
-    messagingSenderId: "250226237572",
-    appId: "1:250226237572:web:f88e26d8dfcb4930faa2d1"
-};
-
-let db; let isDataLoaded = false; 
-
-// --- 2. GLOBAL DATA ---
-let allTests = []; let userDatabase = []; let studentScores = []; 
-let cloudAdminId = "9813324253"; let cloudAdminPass = "Sachin@123";
-let appDownloadUrl = "#"; let storedGeminiKey = "AIzaSyCNkFzxsY3G1dW_MczfkbkuoA3nZhuPgsA"; let appGuidelines = "1. Be respectful.\n2. Do not cheat.";
-let currentUserId = null; let activeAdminTestId = null; let editingQuestionIndex = null; 
-let activeStudentTestId = null; let currentQuestionIndex = 0; let userAnswers = []; let markedForReview = []; 
-let currentQuizLang = 'en'; let testTimerInterval; let timeRemainingSeconds = 0; let isPaused = false;
-let currentTestStartTime = 0; 
-let currentState = 'landing'; // Track current view for back button logic
-
-try {
-    const localBackup = localStorage.getItem("kd_app_backup");
-    if (localBackup) {
-        const data = JSON.parse(localBackup);
-        allTests = data.allTests ? JSON.parse(data.allTests) : []; userDatabase = data.userDatabase ? JSON.parse(data.userDatabase) : []; studentScores = data.studentScores ? JSON.parse(data.studentScores) : [];
-        cloudAdminId = data.adminId || "9813324253"; cloudAdminPass = data.adminPass || "Sachin@123"; appGuidelines = data.guidelines || appGuidelines; appDownloadUrl = data.appDownloadUrl || "#"; storedGeminiKey = data.geminiKey || storedGeminiKey;
-        isDataLoaded = true; 
-    }
-} catch(e) {}
-
-try {
-    firebase.initializeApp(firebaseConfig); db = firebase.firestore();
-    document.getElementById('cloudStatus').innerText = "✅ Connected to Cloud"; document.getElementById('cloudStatus').style.color = "#10b981"; document.getElementById('cloudStatus').style.background = "#ecfdf5";
-    
-    db.collection("kd_app").doc("global_data").onSnapshot((doc) => {
-        if (doc.exists) {
-            const data = doc.data();
-            allTests = data.allTests ? JSON.parse(data.allTests) : []; userDatabase = data.userDatabase ? JSON.parse(data.userDatabase) : []; studentScores = data.studentScores ? JSON.parse(data.studentScores) : [];
-            cloudAdminId = data.adminId || "9813324253"; cloudAdminPass = data.adminPass || "Sachin@123"; appGuidelines = data.guidelines || appGuidelines; appDownloadUrl = data.appDownloadUrl || "#"; storedGeminiKey = data.geminiKey || storedGeminiKey;
-            document.getElementById('appBannerLink').href = appDownloadUrl; updateGroupDatalist();
-            
-            if (!document.getElementById('adminTestManager').classList.contains('hidden')) renderAdminTestList();
-            if (!document.getElementById('adminAnalytics').classList.contains('hidden')) renderAdminAnalytics();
-            if (!document.getElementById('studentTestSelector').classList.contains('hidden')) renderStudentDashboard();
-        }
-        isDataLoaded = true; 
-    });
-} catch (error) { document.getElementById('cloudStatus').innerText = "⚠️ Saving locally."; }
-
-async function saveData() {
-    if (!isDataLoaded) return; 
-
-    const payload = { 
-        allTests: JSON.stringify(allTests), 
-        userDatabase: JSON.stringify(userDatabase), 
-        studentScores: JSON.stringify(studentScores), 
-        adminId: cloudAdminId, adminPass: cloudAdminPass, guidelines: appGuidelines, appDownloadUrl: appDownloadUrl, geminiKey: storedGeminiKey 
+                                  
+    const firebaseConfig = {
+      apiKey: "AIzaSyBDPdbSyP8WD70CCPwbMA9sPtOK9XLejbQ",
+      authDomain: "test2-672e5.firebaseapp.com",
+      databaseURL: "https://test2-672e5-default-rtdb.firebaseio.com",
+      projectId: "test2-672e5",
+      storageBucket: "test2-672e5.firebasestorage.app",
+      messagingSenderId: "250226237572",
+      appId: "1:250226237572:web:d3f794d00f22a703faa2d1",
+      measurementId: "G-P574FX2MFF"
     };
-    
-    localStorage.setItem("kd_app_backup", JSON.stringify(payload));
-    
-    if (!db) return;
-    try { await db.collection("kd_app").doc("global_data").set(payload, { merge: true });
-    } catch (error) { console.error("Cloud Save Error:", error); }
-}
 
-// --- 3. UTILS & AUTH ---
-// BACK BUTTON LOGIC
-function pushStateToHistory(stateName) {
-    currentState = stateName;
-    history.pushState({ view: stateName }, stateName, `#${stateName}`);
-}
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
 
-window.addEventListener('popstate', (event) => {
-    // Prevent default reload behavior
-    
-    if (event.state && event.state.view) {
-        const view = event.state.view;
-        handleNavigation(view);
-    } else {
-        // Fallback or initial state
-        handleNavigation('landing');
-    }
-});
+    let currentUser = null;
+    let currentPage = 'login';
+    let apiKey = "AIzaSyCMMrrl7q2pOVxa_XRwQAkPIKPvzM_wd1g";
 
-function handleNavigation(view) {
-    closeModals(); // Always close modals on back
-    
-    switch (view) {
-        case 'landing':
-            if (currentUserId) {
-                 // If logged in as student and we try to go back to landing, log out or stay on dashboard
-                 // Let's keep them on dashboard for better UX, or log them out if you prefer.
-                 // logout(); 
-                 document.getElementById('userPanel').classList.remove('hidden');
-                 document.getElementById('landingPage').classList.add('hidden');
-            } else if (!document.getElementById('adminPanel').classList.contains('hidden')) {
-                // If admin is logged in
-            } else {
-                logout(); // Ensure we are actually logged out visually
-            }
-            break;
-        case 'adminDashboard':
-             if (!document.getElementById('adminPanel').classList.contains('hidden')) {
-                  switchAdminTab('adminAnalytics');
-             }
-             break;
-        case 'studentDashboard':
-            if (currentUserId) {
-                switchStudentTab('studentTestSelector');
-                document.getElementById('quizContainer').classList.add('hidden');
-                document.getElementById('resultContainer').classList.add('hidden');
-                if(testTimerInterval) clearInterval(testTimerInterval); // Stop timer if we back out
-            }
-            break;
-        case 'takingTest':
-             // It's tricky to handle back button *during* a test. Usually, you prompt.
-             if (!document.getElementById('quizContainer').classList.contains('hidden')) {
-                 if (confirm("Are you sure you want to leave the test? Progress will be lost.")) {
-                     switchStudentTab('studentTestSelector');
-                     document.getElementById('quizContainer').classList.add('hidden');
-                 } else {
-                     // Stay on test, push state again to "trap" them
-                     history.pushState({ view: 'takingTest' }, '', '#takingTest');
-                 }
-             }
-             break;
-    }
-}
-
-
-function toggleVisibility(id) { const f = document.getElementById(id); f.type = f.type === "password" ? "text" : "password"; }
-function openModal(id) { document.getElementById(id).classList.remove('hidden'); pushStateToHistory('modalOpen'); }
-function closeModals() { document.querySelectorAll('.modal-overlay').forEach(el => el.classList.add('hidden')); if(currentState === 'modalOpen') history.back(); }
-function switchModal(cId, oId) { document.getElementById(cId).classList.add('hidden'); document.getElementById(oId).classList.remove('hidden'); }
-function getTextByLang(txt, lang) { return txt ? (txt[lang] || txt['en'] || "") : ""; }
-function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('lightboxModal').classList.remove('hidden'); pushStateToHistory('lightboxOpen'); }
-function closeLightbox() { document.getElementById('lightboxModal').classList.add('hidden'); if(currentState === 'lightboxOpen') history.back(); }
-
-document.getElementById('qImageUpload').addEventListener('change', function(e) {
-    const file = e.target.files[0]; if (!file) return;
-    const r = new FileReader(); r.onload = function(event) {
-        const img = new Image(); img.onload = function() {
-            const canvas = document.createElement('canvas'); let w = img.width, h = img.height; if (w > 600) { h *= 600 / w; w = 600; }
-            canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.5); document.getElementById('qImageBase64').value = dataUrl; document.getElementById('imagePreview').src = dataUrl; document.getElementById('imagePreview').classList.remove('hidden');
-        }; img.src = event.target.result;
-    }; r.readAsDataURL(file);
-});
-function resetImageUpload() { document.getElementById('qImageUpload').value=""; document.getElementById('qImageBase64').value=""; document.getElementById('imagePreview').classList.add('hidden'); }
-
-function verifyAdmin() { if (document.getElementById('adminIdInput').value === cloudAdminId && document.getElementById('adminPasswordInput').value === cloudAdminPass) { closeModals(); document.getElementById('landingPage').classList.add('hidden'); document.getElementById('adminPanel').classList.remove('hidden'); renderAdminAnalytics(); updateGroupDatalist(); pushStateToHistory('adminDashboard'); } else { document.getElementById('adminError').innerText = "Incorrect"; document.getElementById('adminError').style.display='block'; } }
-function verifyStudent() { const id = document.getElementById('loginId').value; const pass = document.getElementById('loginPass').value; const user = userDatabase.find(u => u.id === id && u.pass === pass); if (user) { currentUserId = user.id; closeModals(); document.getElementById('landingPage').classList.add('hidden'); document.getElementById('userPanel').classList.remove('hidden'); document.getElementById('welcomeMessage').innerText = `Welcome, ${user.name}`; renderStudentDashboard(); pushStateToHistory('studentDashboard'); } else { document.getElementById('loginError').innerText = "Incorrect"; document.getElementById('loginError').style.display='block'; } }
-function registerStudent() { const name = document.getElementById('regName').value, id = document.getElementById('regId').value, pass = document.getElementById('regPass').value; if(userDatabase.find(u => u.id === id)) return alert("ID taken"); userDatabase.push({ id, name, pass }); saveData(); switchModal('registerModal', 'studentLoginModal'); alert("Registered!"); }
-function openRegistration() { document.getElementById('regGuidelinesBox').innerText = appGuidelines; switchModal('studentLoginModal', 'registerModal'); }
-function toggleRegButton() { document.getElementById('regSubmitBtn').disabled = !document.getElementById('acceptGuidelines').checked; }
-function logout() { clearInterval(testTimerInterval); currentUserId=null; document.getElementById('adminPanel').classList.add('hidden'); document.getElementById('userPanel').classList.add('hidden'); document.getElementById('landingPage').classList.remove('hidden'); pushStateToHistory('landing'); }
-function switchAdminTab(vId) { document.querySelectorAll('#adminPanel .admin-view').forEach(el=>el.classList.add('hidden')); document.querySelectorAll('#adminTabs .tab-btn').forEach(el=>el.classList.remove('active')); document.getElementById(vId).classList.remove('hidden'); if(event) event.target.classList.add('active'); if(vId==='adminAnalytics') renderAdminAnalytics(); if(vId==='adminTestManager') renderAdminTestList(); if(vId==='adminUserManager') renderAdminUserList(); }
-function switchStudentTab(vId) { document.querySelectorAll('#userPanel .student-view').forEach(el=>el.classList.add('hidden')); document.querySelectorAll('#studentTabs .tab-btn').forEach(el=>el.classList.remove('active')); document.getElementById(vId).classList.remove('hidden'); if(event) event.target.classList.add('active'); if(vId==='studentTestSelector') renderStudentDashboard(); if(vId==='studentLeaderboard') populateLeaderboardDropdown(); }
-function saveGeminiKey() { storedGeminiKey = document.getElementById('adminAiKey').value; saveData(); const msg = document.getElementById('aiKeyMsg'); msg.innerText = "API Key Saved!"; msg.style.display = 'block'; setTimeout(() => { msg.style.display = 'none'; }, 3000); }
-
-// --- 4. ADMIN FEATURES & UI ---
-function updateGroupDatalist() { const groups = [...new Set(allTests.map(t => t.group || 'General'))]; document.getElementById('existingGroups').innerHTML = groups.map(g => `<option value="${g}">`).join(''); }
-function createNewTest() { const name = document.getElementById('newTestName').value.trim(); const timer = parseInt(document.getElementById('newTestTimer').value) || 0; const group = document.getElementById('newTestGroup').value.trim() || 'General'; if (!name) return alert("Enter test name."); allTests.push({ id: "test_" + Date.now(), name, group, timeLimit: timer, questions: [] }); saveData(); document.getElementById('newTestName').value = ''; document.getElementById('newTestTimer').value = ''; document.getElementById('newTestGroup').value = ''; updateGroupDatalist(); renderAdminTestList(); }
-function renderAdminTestList() {
-    const div = document.getElementById('adminTestList'); div.innerHTML = ''; if (allTests.length === 0) return div.innerHTML = '<p>No tests created.</p>';
-    const groups = allTests.reduce((acc, test) => { const g = test.group || 'General'; if(!acc[g]) acc[g] = []; acc[g].push(test); return acc; }, {});
-    for (const [groupName, tests] of Object.entries(groups)) {
-        div.innerHTML += `<div class="group-heading">${groupName}</div>`;
-        tests.forEach(test => { div.innerHTML += `<div class="list-item"><div><strong>${test.name}</strong><br><span style="font-size:12px; color:#64748b;">${test.questions.length} Qs | ⏱️ ${test.timeLimit || 'No Limit'}</span></div><div class="action-buttons"><button class="btn-warning" onclick="editTestTimer('${test.id}')">Time</button><button class="btn-student" onclick="openTestEditor('${test.id}')">Manage Qs</button><button class="btn-admin" onclick="deleteTest('${test.id}')">Del</button></div></div>`; });
-    }
-}
-
-function renderAdminAnalytics() { 
-    const div = document.getElementById('adminAnalyticsList'); div.innerHTML = ''; 
-    if (studentScores.length === 0) return div.innerHTML = '<p>No scores yet.</p>'; 
-    
-    [...studentScores].reverse().forEach((record, revIndex) => { 
-        const pct = Math.round((record.score/record.total)*100); 
-        const col = pct>=70?'#10b981':'#ef4444'; 
-        const originalIndex = studentScores.length - 1 - revIndex; 
-        
-        div.innerHTML += `
-        <div class="list-item" style="display: grid; grid-template-columns: 2fr 2fr 2fr auto; gap: 10px; align-items: center; border-left: 4px solid ${col};">
-            <div><strong>${record.studentName}</strong><br><span style="font-size:11px;">ID: ${record.studentId}</span></div>
-            <div style="color:#3b82f6; font-weight:bold;">${record.testName} <br><span style="color:#94a3b8; font-weight:normal; font-size:11px;">${record.date}</span></div>
-            <div style="font-size:12px; color:#475569; line-height: 1.6;">
-                <span class="progress-stat" style="background:#ecfdf5; color:#059669;">✅ ${record.score}</span> 
-                <span class="progress-stat" style="background:#fef2f2; color:#dc2626;">❌ ${record.wrong || 0}</span> 
-                <span class="progress-stat" style="background:#f1f5f9; color:#64748b;">⚪ ${record.skipped || 0}</span>
-            </div>
-            <div style="text-align:right;">
-                <button class="btn-student" style="padding: 6px 14px; font-size:12px; width:auto; margin:0;" onclick="viewStudentDetailedProgress(${originalIndex})">View Stats</button>
-            </div>
-        </div>`; 
-    }); 
-}
-
-function viewStudentDetailedProgress(index) {
-    const record = studentScores[index];
-    const test = allTests.find(t => t.id === record.testId);
-    const content = document.getElementById('adminProgressContent');
-    
-    const accuracy = Math.round((record.score/record.total)*100);
-    const barColor = accuracy >= 70 ? '#10b981' : (accuracy >= 40 ? '#f59e0b' : '#ef4444');
-    
-    let timeStr = "N/A";
-    if(record.timeSpentSec !== undefined) {
-        const mins = Math.floor(record.timeSpentSec / 60);
-        const secs = record.timeSpentSec % 60;
-        timeStr = `${mins}m ${secs}s`;
+    function showPage(page) {
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('register').style.display = 'none';
+      document.getElementById('admin').style.display = 'none';
+      document.getElementById('admin-dashboard').style.display = 'none';
+      document.getElementById('manage-api-keys').style.display = 'none';
+      document.getElementById(page).style.display = 'block';
+      currentPage = page;
     }
 
-    let htmlStr = `
-        <div class="report-header-card">
-            <h2>${record.studentName}</h2>
-            <p>ID: ${record.studentId} | ${record.date}</p>
-            <div class="report-stats-row">
-                <div class="report-stat-box"><h4>Score</h4><div>${record.score} / ${record.total}</div></div>
-                <div class="report-stat-box"><h4>Accuracy</h4><div style="color:${barColor};">${accuracy}%</div></div>
-                <div class="report-stat-box"><h4>Time Spent</h4><div style="color:#cbd5e1;">${timeStr}</div></div>
-            </div>
-            <div class="progress-bar-bg">
-                <div class="progress-bar-fill" style="width: ${accuracy}%; background: ${barColor};"></div>
-            </div>
-        </div>
-        <h4 style="margin: 20px 0 15px 0; color:#1e293b; font-size: 16px;">Detailed Breakdown</h4>
-    `;
-
-    if (!test) {
-        htmlStr += `<p style="color:#ef4444; background:#fef2f2; padding:10px; border-radius:8px;">Test data no longer exists or was deleted.</p>`;
-    } else if (!record.answers) {
-        htmlStr += `<p style="color:#f59e0b; background:#fffbeb; padding:10px; border-radius:8px;">Detailed answers were not saved for this older test attempt.</p>`;
-    } else {
-        test.questions.forEach((q, i) => {
-            const userAnswer = record.answers[i];
-            const isCorrect = userAnswer === q.correctIndex;
-            
-            let statusClass = 'q-skipped'; let statusText = '⚪ Skipped';
-            if (isCorrect) { statusClass = 'q-correct'; statusText = '✅ Correct'; }
-            else if (userAnswer !== null) { statusClass = 'q-wrong'; statusText = '❌ Incorrect'; }
-
-            htmlStr += `<div class="q-card">
-                <div class="q-status-badge ${statusClass}">${statusText}</div>
-                <p style="margin:0 0 15px 0; font-size:15px; font-weight:600; color:#1e293b;">Q${i+1}: ${getTextByLang(q.question, 'en')} / ${getTextByLang(q.question, 'hi')}</p>`;
-
-            q.options.forEach((opt, j) => {
-                let optStyle = "color: #64748b; font-size:14px; padding: 6px 10px; border-radius: 6px; margin-bottom: 5px; background: #f1f5f9;";
-                let prefix = " ";
-                
-                if (j === q.correctIndex) {
-                    optStyle = "color: #065f46; font-weight:bold; background: #d1fae5; border-left: 3px solid #10b981; padding: 6px 10px; border-radius: 4px; margin-bottom: 5px;"; 
-                    prefix = "✓ ";
-                } else if (j === userAnswer && !isCorrect) {
-                    optStyle = "color: #991b1b; text-decoration:line-through; font-weight:bold; background: #fee2e2; border-left: 3px solid #ef4444; padding: 6px 10px; border-radius: 4px; margin-bottom: 5px;"; 
-                    prefix = "✗ ";
-                }
-                htmlStr += `<div style="${optStyle}">${prefix}${getTextByLang(opt, 'en')} / ${getTextByLang(opt, 'hi')}</div>`;
-            });
-            htmlStr += `</div>`;
-        });
-    }
-    
-    content.innerHTML = htmlStr;
-    openModal('adminProgressModal');
-}
-
-function openQuestionBankModal() {
-    const sel = document.getElementById('qbTestFilter');
-    sel.innerHTML = '<option value="all">All Other Tests</option>';
-    allTests.forEach(t => {
-        if (t.id !== activeAdminTestId && t.questions.length > 0) {
-            sel.innerHTML += `<option value="${t.id}">${t.name} (${t.questions.length} Qs)</option>`;
-        }
-    });
-    renderQuestionBankList();
-    openModal('questionBankModal');
-}
-
-function renderQuestionBankList() {
-    const div = document.getElementById('questionBankList');
-    div.innerHTML = '';
-    const filterId = document.getElementById('qbTestFilter').value;
-    let count = 0;
-
-    allTests.forEach(t => {
-        if (t.id === activeAdminTestId) return; 
-        if (filterId !== 'all' && t.id !== filterId) return; 
-        
-        t.questions.forEach((q, i) => {
-            const qText = getTextByLang(q.question, 'en') || getTextByLang(q.question, 'hi');
-            div.innerHTML += `
-                <label style="display: flex; align-items: flex-start; gap: 12px; background: #fff; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: background 0.2s;">
-                    <input type="checkbox" class="qb-checkbox" value="${t.id}_${i}" style="margin-top: 2px; width: 18px; height: 18px;">
-                    <div>
-                        <span style="font-size: 14px; color: #1e293b; font-weight: 500;">${qText.substring(0, 100)}...</span><br>
-                        <span style="font-size: 11px; color: #64748b; font-weight:bold; background:#f1f5f9; padding:2px 6px; border-radius:4px; margin-top:4px; display:inline-block;">Source: ${t.name}</span>
-                    </div>
-                </label>
-            `;
-            count++;
-        });
-    });
-
-    if (count === 0) {
-        div.innerHTML = '<p style="text-align:center; color:#94a3b8; padding: 20px; font-weight:bold;">No questions available in other tests.</p>';
-    }
-}
-
-function importSelectedQuestions() {
-    const checkboxes = document.querySelectorAll('.qb-checkbox:checked');
-    if (checkboxes.length === 0) return alert("Select at least one question.");
-    
-    const currentTest = allTests.find(t => t.id === activeAdminTestId);
-    let importedCount = 0;
-
-    checkboxes.forEach(cb => {
-        const [tId, qIdxStr] = cb.value.split('_');
-        const sourceTest = allTests.find(t => t.id === tId);
-        
-        if (sourceTest && sourceTest.questions[parseInt(qIdxStr)]) {
-            const qCopy = JSON.parse(JSON.stringify(sourceTest.questions[parseInt(qIdxStr)]));
-            currentTest.questions.push(qCopy);
-            importedCount++;
-        }
-    });
-
-    saveData();
-    renderAdminQuestionList();
-    closeModals();
-    
-    const msg = document.getElementById('adminMessage');
-    msg.innerText = `✨ Successfully imported ${importedCount} question(s)!`;
-    msg.style.display = 'block';
-    setTimeout(() => msg.style.display = 'none', 4000);
-}
-
-
-function openTestEditor(id) { activeAdminTestId = id; document.getElementById('editingTestTitle').innerText = `Editing: ${allTests.find(t=>t.id===id).name}`; document.querySelectorAll('.admin-view').forEach(el=>el.classList.add('hidden')); document.getElementById('adminQuestionEditor').classList.remove('hidden'); cancelEdit(); renderAdminQuestionList(); }
-function renderAdminQuestionList() { const div = document.getElementById('adminExistingQuestionsList'); const t = allTests.find(t=>t.id===activeAdminTestId); div.innerHTML=''; t.questions.forEach((q,i) => { div.innerHTML += `<div class="list-item"><div><strong>Q${i+1}:</strong> ${getTextByLang(q.question,'en').substring(0,40)}...</div><div class="action-buttons"><button class="btn-secondary" onclick="editQuestion(${i})">Edit</button><button class="btn-admin" onclick="deleteQuestion(${i})">Del</button></div></div>`; }); }
-function editQuestion(i) { const q = allTests.find(t=>t.id===activeAdminTestId).questions[i]; document.getElementById('qTextEn').value = getTextByLang(q.question,'en'); document.getElementById('qTextHi').value = getTextByLang(q.question,'hi'); for(let j=0;j<4;j++){ document.getElementById(`opt${j}En`).value=getTextByLang(q.options[j],'en'); document.getElementById(`opt${j}Hi`).value=getTextByLang(q.options[j],'hi'); } document.getElementById('correctAnswer').value=q.correctIndex; if(q.image){ document.getElementById('qImageBase64').value=q.image; document.getElementById('imagePreview').src=q.image; document.getElementById('imagePreview').classList.remove('hidden'); }else{resetImageUpload();} editingQuestionIndex=i; document.getElementById('saveQuestionBtn').innerText="Update"; document.getElementById('cancelEditBtn').classList.remove('hidden'); }
-function cancelEdit() { editingQuestionIndex=null; document.getElementById('saveQuestionBtn').innerText="Save Question"; document.getElementById('cancelEditBtn').classList.add('hidden'); document.getElementById('qTextEn').value=''; document.getElementById('qTextHi').value=''; for(let j=0;j<4;j++){ document.getElementById(`opt${j}En`).value=''; document.getElementById(`opt${j}Hi`).value=''; } document.getElementById('correctAnswer').value='0'; resetImageUpload(); }
-
-// --- UPDATED ADD QUESTION (Manual) ---
-// Note: Manual input requires the admin to enter both if they want both. 
-// We generally rely on the AI tools for auto-translation.
-function addQuestionToTest() { 
-    const qEn=document.getElementById('qTextEn').value, qHi=document.getElementById('qTextHi').value; 
-    const opts=[]; for(let i=0;i<4;i++) opts.push({en:document.getElementById(`opt${i}En`).value, hi:document.getElementById(`opt${i}Hi`).value}); 
-    if(!qEn || opts.some(o=>!o.en)) return alert("Fill English fields."); 
-    const obj = { question:{en:qEn,hi:qHi}, options:opts, correctIndex:parseInt(document.getElementById('correctAnswer').value), image:document.getElementById('qImageBase64').value }; 
-    const t = allTests.find(t=>t.id===activeAdminTestId); 
-    if(editingQuestionIndex!==null) t.questions[editingQuestionIndex]=obj; else t.questions.push(obj); 
-    saveData(); renderAdminQuestionList(); cancelEdit(); 
-}
-
-function deleteQuestion(i) { allTests.find(t=>t.id===activeAdminTestId).questions.splice(i,1); saveData(); renderAdminQuestionList(); }
-function deleteTest(id) { if(confirm("Delete test?")) { allTests = allTests.filter(t=>t.id!==id); saveData(); renderAdminTestList(); } }
-function editTestTimer(id) { const t=allTests.find(t=>t.id===id); let n=prompt("Minutes (0=none):",t.timeLimit); if(n!==null){ t.timeLimit=parseInt(n)||0; saveData(); renderAdminTestList(); } }
-function renderAdminUserList() { const div=document.getElementById('adminUserList'); div.innerHTML=''; userDatabase.forEach((u,i) => div.innerHTML+=`<div class="list-item"><div><strong>${u.name}</strong> (ID: ${u.id})</div><button class="btn-admin" onclick="userDatabase.splice(${i},1);saveData();renderAdminUserList();">Rem</button></div>`); }
-
-// --- AI TRANSLATION CHECK HELPER ---
-function checkIfLanguageSubject(text) {
-    const t = text.toLowerCase();
-    return t.includes('english grammar') || t.includes('hindi grammar') || t.includes('hindi sahitya') || t.includes('english literature');
-}
-
-// --- UPDATED AI BULK GENERATION ---
-async function generateBulkQuestionsWithAI() { 
-    const topicInput = document.getElementById('aiTopicInput'); const difficultySelect = document.getElementById('aiDifficultySelect'); const countInput = document.getElementById('aiQuestionCount'); const generateBtn = document.getElementById('aiGenerateBtn'); const errorMsg = document.getElementById('aiGenError');
-    const topic = topicInput.value.trim(); const difficulty = difficultySelect.value; const count = parseInt(countInput.value) || 1;
-    if (!storedGeminiKey) { errorMsg.innerText = "Please configure the API Key first."; errorMsg.style.display = 'block'; return; }
-    if (!topic) { errorMsg.innerText = "Enter a topic."; errorMsg.style.display = 'block'; return; }
-    
-    errorMsg.style.display = 'none'; generateBtn.innerText = `Generating ${count}...`; generateBtn.disabled = true;
-
-    const isLangSubject = checkIfLanguageSubject(topic);
-    
-    let promptText = "";
-    if(isLangSubject) {
-        promptText = `Generate ${count} multiple-choice question(s) about: "${topic}". Difficulty: ${difficulty.toUpperCase()}. Since this is a language subject, keep the question and options in their native language (do not translate). Map the text to BOTH 'en' and 'hi' fields identically. Return ONLY a valid JSON ARRAY. Structure: [{"question":{"en":"...","hi":"..."},"options":[{"en":"...","hi":"..."},{"en":"...","hi":"..."},{"en":"...","hi":"..."},{"en":"...","hi":"..."}],"correctIndex":0,"image":""}]`;
-    } else {
-        promptText = `Generate ${count} multiple-choice question(s) about: "${topic}". Difficulty: ${difficulty.toUpperCase()}. You MUST provide the question and ALL 4 options in BOTH English (en) and Hindi (hi). Return ONLY a valid JSON ARRAY. Structure: [{"question":{"en":"[English Text]","hi":"[Hindi Translation]"},"options":[{"en":"...","hi":"..."},{"en":"...","hi":"..."},{"en":"...","hi":"..."},{"en":"...","hi":"..."}],"correctIndex":0,"image":""}]`;
+    function goBack() {
+      // Go back to previous page
+      window.history.back();
     }
 
-    try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${storedGeminiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }], generationConfig: { responseMimeType: "application/json" } }) });
-        if (!response.ok) throw new Error(`Google API Error`);
-        const data = await response.json(); const aiText = data.candidates[0].content.parts[0].text; const parsedQuestions = JSON.parse(aiText);
-        const currentTest = allTests.find(t => t.id === activeAdminTestId);
-        parsedQuestions.forEach(qData => { currentTest.questions.push({ question: { en: qData.question?.en || "", hi: qData.question?.hi || "" }, options: qData.options || [], correctIndex: parseInt(qData.correctIndex) || 0, image: "" }); });
-        saveData(); renderAdminQuestionList(); document.getElementById('adminMessage').innerText = `✨ Added ${parsedQuestions.length} bilingual questions!`; document.getElementById('adminMessage').style.display = 'block'; setTimeout(() => document.getElementById('adminMessage').style.display = 'none', 4000); topicInput.value = '';
-    } catch (error) { errorMsg.innerText = "Error: " + error.message; errorMsg.style.display = 'block'; } finally { generateBtn.innerText = "Bulk Generate"; generateBtn.disabled = false; }
-}
-
-// --- UPDATED AI PDF EXTRACTION ---
-function extractQuestionsFromPDF() {
-    const fileInput = document.getElementById('pdfUploadInput'); const extractBtn = document.getElementById('pdfExtractBtn'); const msgBox = document.getElementById('pdfExtractMsg');
-    if (!storedGeminiKey) { msgBox.innerText = "Configure API Key first."; msgBox.style.color = "#ef4444"; msgBox.style.display = 'block'; return; }
-    if (!fileInput.files || fileInput.files.length === 0) { msgBox.innerText = "Select a PDF."; msgBox.style.color = "#ef4444"; msgBox.style.display = 'block'; return; }
-    
-    const currentTestName = allTests.find(t => t.id === activeAdminTestId).name;
-    const isLangSubject = checkIfLanguageSubject(currentTestName);
-
-    const file = fileInput.files[0]; msgBox.style.color = "#4338ca"; msgBox.innerText = "Reading & Translating PDF..."; msgBox.style.display = 'block'; extractBtn.disabled = true; extractBtn.innerText = "Extracting...";
-    
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-        const base64String = e.target.result.split(',')[1];
-        
-        let promptText = "";
-        if(isLangSubject) {
-            promptText = `Extract ALL multiple-choice questions from this PDF. Since this test is likely a language subject based on its title, do NOT translate the text. Put the exact extracted text into BOTH 'en' and 'hi' fields. Deduce correctIndex if answer key is present, else 0. Return ONLY JSON ARRAY: [{"question":{"en":"","hi":""},"options":[{"en":"","hi":""},{"en":"","hi":""},{"en":"","hi":""},{"en":"","hi":""}],"correctIndex":0,"image":""}]`;
-        } else {
-            promptText = `Extract ALL multiple-choice questions from this PDF. You MUST translate the questions and options so that they are provided in BOTH English ('en') and Hindi ('hi'). Deduce correctIndex if answer key is present, else 0. Return ONLY JSON ARRAY: [{"question":{"en":"","hi":""},"options":[{"en":"","hi":""},{"en":"","hi":""},{"en":"","hi":""},{"en":"","hi":""}],"correctIndex":0,"image":""}]`;
-        }
-
-        try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${storedGeminiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [ { text: promptText }, { inlineData: { mimeType: "application/pdf", data: base64String } } ] }], generationConfig: { responseMimeType: "application/json" } }) });
-            if (!response.ok) throw new Error("API Request Failed");
-            const data = await response.json(); const aiText = data.candidates[0].content.parts[0].text; const parsedQuestions = JSON.parse(aiText);
-            const currentTest = allTests.find(t => t.id === activeAdminTestId);
-            parsedQuestions.forEach(qData => { currentTest.questions.push({ question: { en: qData.question?.en || "", hi: qData.question?.hi || "" }, options: qData.options || [ {en:"A", hi:""}, {en:"B", hi:""}, {en:"C", hi:""}, {en:"D", hi:""} ], correctIndex: parseInt(qData.correctIndex) || 0, image: "" }); });
-            saveData(); renderAdminQuestionList(); msgBox.innerText = `✨ Success! Extracted & Translated ${parsedQuestions.length} questions.`; msgBox.style.color = "#10b981"; fileInput.value = ""; 
-        } catch (error) { msgBox.innerText = "Error: " + error.message; msgBox.style.color = "#ef4444"; } finally { extractBtn.innerText = "Extract Questions"; extractBtn.disabled = false; }
-    }; reader.readAsDataURL(file);
-}
-
-// --- 5. STUDENT PORTAL ---
-function renderStudentDashboard() {
-    const testsDiv = document.getElementById('studentTestList'); testsDiv.innerHTML = ''; const playableTests = allTests.filter(t => t.questions.length > 0);
-    const groups = playableTests.reduce((acc, test) => { const g = test.group || 'General'; if(!acc[g]) acc[g] = []; acc[g].push(test); return acc; }, {});
-    if(Object.keys(groups).length === 0) testsDiv.innerHTML = '<p>No tests available.</p>';
-    for (const [groupName, tests] of Object.entries(groups)) {
-        testsDiv.innerHTML += `<div class="group-heading">${groupName}</div>`;
-        tests.forEach(test => { testsDiv.innerHTML += `<div class="list-item"><div><strong>${test.name}</strong><br><span style="font-size:12px; color:#64748b;">⏱️ ${test.timeLimit||'No Limit'}</span></div><button class="btn-student" style="width:auto; margin:0;" onclick="startQuiz('${test.id}')">Start Test</button></div>`; });
+    function login() {
+      // Login logic here
     }
-    const histDiv = document.getElementById('studentHistoryList'); histDiv.innerHTML='';
-    studentScores.filter(s=>s.studentId===currentUserId).reverse().forEach(record => {
-        const pct = Math.round((record.score/record.total)*100); const col = pct>=70?'#10b981':'#ef4444';
-        histDiv.innerHTML += `<div class="list-item grid-row" style="border-left: 4px solid ${col};"><div style="font-weight:bold;">${record.testName}</div><div style="font-size:12px; color:#64748b;">${record.date}</div><div style="text-align:right; font-weight:bold; color:${col};">${pct}%</div></div>`;
-    });
-}
 
-function startQuiz(id) { 
-    activeStudentTestId=id; currentQuestionIndex=0; const t=allTests.find(t=>t.id===id); 
-    userAnswers=new Array(t.questions.length).fill(null); 
-    markedForReview=new Array(t.questions.length).fill(false); 
-    currentTestStartTime = Date.now(); 
-    
-    document.querySelectorAll('.student-view').forEach(e=>e.classList.add('hidden')); 
-    document.getElementById('quizContainer').classList.remove('hidden'); 
-    document.getElementById('activeQuizTitle').innerText=t.name; 
-    document.getElementById('pauseScreen').classList.add('hidden'); 
-    document.getElementById('quizContent').classList.remove('hidden'); 
-    pushStateToHistory('takingTest');
-    isPaused=false; renderQuestion(); startTimer(t.timeLimit); 
-}
-
-function renderQuestionPalette() {
-    const pal = document.getElementById('questionPalette'); pal.innerHTML = '';
-    const t = allTests.find(t=>t.id===activeStudentTestId);
-    t.questions.forEach((q, i) => {
-        let cls = 'pal-unanswered';
-        if (markedForReview[i]) cls = 'pal-marked';
-        else if (userAnswers[i] !== null) cls = 'pal-answered';
-        
-        if (i === currentQuestionIndex) cls += ' pal-active';
-        
-        pal.innerHTML += `<button class="palette-btn ${cls}" onclick="jumpToQuestion(${i})">${i+1}</button>`;
-    });
-    
-    document.getElementById('markReviewBtn').innerText = markedForReview[currentQuestionIndex] ? "Unmark Review" : "Mark Review";
-}
-
-function jumpToQuestion(index) {
-    currentQuestionIndex = index;
-    renderQuestion();
-}
-
-function toggleMarkForReview() {
-    markedForReview[currentQuestionIndex] = !markedForReview[currentQuestionIndex];
-    renderQuestionPalette(); 
-}
-
-function renderQuestion() { 
-    const t=allTests.find(t=>t.id===activeStudentTestId); const q=t.questions[currentQuestionIndex]; 
-    renderQuestionPalette(); 
-    
-    document.getElementById('questionCountText').innerText=`Q ${currentQuestionIndex+1} of ${t.questions.length}`; 
-    document.getElementById('questionDisplay').innerText=getTextByLang(q.question, currentQuizLang); 
-    const img=document.getElementById('questionImageDisplay'); if(q.image){ img.src=q.image; img.classList.remove('hidden'); }else img.classList.add('hidden'); 
-    const opts=document.getElementById('optionsDisplay'); opts.innerHTML=''; 
-    q.options.forEach((o,i)=>{ 
-        const c=userAnswers[currentQuestionIndex]===i?"checked":""; const s=c?"border-color:#3b82f6; background:#eff6ff;":""; 
-        opts.innerHTML+=`<label class="option-label" style="${s}"><input type="radio" name="qo" onchange="userAnswers[${currentQuestionIndex}]=${i};renderQuestion();" ${c}> ${getTextByLang(o,currentQuizLang)}</label>`; 
-    }); 
-    document.getElementById('prevBtn').disabled=currentQuestionIndex===0; 
-    document.getElementById('nextBtn').innerText=currentQuestionIndex===t.questions.length-1?"Submit Test":"Next"; 
-    
-    if(currentQuestionIndex===t.questions.length-1) {
-        document.getElementById('nextBtn').style.backgroundColor = "#ef4444"; 
-    } else {
-        document.getElementById('nextBtn').style.backgroundColor = "#10b981";
+    function register() {
+      // Register logic here
     }
-}
 
-function navigateQuestion(d) { const t=allTests.find(t=>t.id===activeStudentTestId); if(d===1 && currentQuestionIndex===t.questions.length-1) return submitTestEarly(); currentQuestionIndex+=d; renderQuestion(); }
-function setQuizLanguage(l) { currentQuizLang=l; renderQuestion(); }
-function submitTestEarly() { if(confirm("Are you sure you want to submit the test?")) processTestResults(); }
-function startTimer(m) { clearInterval(testTimerInterval); const d=document.getElementById('timerDisplay'); if(!m){ d.innerText="No Limit"; return; } timeRemainingSeconds=m*60; d.style.color="#ef4444"; testTimerInterval=setInterval(()=>{ if(!isPaused){ timeRemainingSeconds--; d.innerText=`${Math.floor(timeRemainingSeconds/60)}:${(timeRemainingSeconds%60).toString().padStart(2,'0')}`; if(timeRemainingSeconds<=0) processTestResults(); } },1000); }
-function togglePause() { isPaused=!isPaused; document.getElementById('quizContent').classList.toggle('hidden'); document.getElementById('pauseScreen').classList.toggle('hidden'); }
+    function adminLogin() {
+      // Admin login logic here
+      showPage('admin-dashboard');
+    }
 
-function processTestResults() {
-    clearInterval(testTimerInterval); 
-    const timeSpentTotalSecs = Math.floor((Date.now() - currentTestStartTime) / 1000); 
+    function addQuestion() {
+      showPage('add-question');
+    }
 
-    const t = allTests.find(t=>t.id===activeStudentTestId); 
-    const u = userDatabase.find(u=>u.id===currentUserId); 
-    
-    let correct = 0; let wrong = 0; let skipped = 0;
-    
-    t.questions.forEach((q,i) => { 
-        if(userAnswers[i] === null) skipped++;
-        else if (userAnswers[i] === q.correctIndex) correct++;
-        else wrong++;
-    });
-    
-    studentScores.push({ 
-        studentId:u.id, 
-        studentName:u.name, 
-        testId:t.id, 
-        testName:t.name, 
-        score:correct, 
-        wrong:wrong,
-        skipped:skipped,
-        total:t.questions.length, 
-        answers:userAnswers, 
-        timeSpentSec: timeSpentTotalSecs, 
-        date:new Date().toLocaleDateString()+' '+new Date().toLocaleTimeString() 
-    }); 
-    
-    saveData();
-    
-    document.getElementById('quizContainer').classList.add('hidden'); 
-    document.getElementById('resultContainer').classList.remove('hidden'); 
-    pushStateToHistory('testResults');
-    
-    document.getElementById('scoreDisplay').innerText = `${correct} / ${t.questions.length}`; 
-    document.getElementById('scorePercentage').innerText = `${Math.round((correct/t.questions.length)*100)}%`; 
-    
-    document.getElementById('resCorrect').innerText = correct;
-    document.getElementById('resWrong').innerText = wrong;
-    document.getElementById('resSkipped').innerText = skipped;
-    
-    const allScoresForThisTest = studentScores.filter(s => s.testId === t.id);
-    const highestScores = {};
-    allScoresForThisTest.forEach(scoreRecord => {
-        if (!highestScores[scoreRecord.studentId] || highestScores[scoreRecord.studentId].score < scoreRecord.score) {
-            highestScores[scoreRecord.studentId] = scoreRecord;
-        }
-    });
-    const rankedList = Object.values(highestScores).sort((a,b) => b.score - a.score);
-    let myRank = rankedList.findIndex(r => r.studentId === currentUserId) + 1;
-    
-    document.getElementById('resRank').innerText = "#" + myRank;
+    function manageTests() {
+      // Manage tests logic here
+    }
 
-    buildReviewUI(t);
-}
+    function viewStudents() {
+      // View students logic here
+    }
 
-function buildReviewUI(t) { const div=document.getElementById('reviewList'); div.innerHTML=''; t.questions.forEach((q,i)=>{ const ua=userAnswers[i]; const isC=ua===q.correctIndex; let html=`<div class="review-card"><p><b>${isC?'✅':(ua===null?'⚪':'❌')} Q${i+1}:</b> ${getTextByLang(q.question,currentQuizLang)}</p>`; q.options.forEach((o,j)=>{ let c='review-option'; if(j===q.correctIndex) c+=' review-correct'; else if(j===ua) c+=' review-wrong'; html+=`<div class="${c}">${getTextByLang(o,currentQuizLang)}</div>`; }); div.innerHTML+=html+'</div>'; }); }
-function setReviewLanguage(l) { currentQuizLang=l; buildReviewUI(allTests.find(t=>t.id===activeStudentTestId)); }
+    function manageApiKeys() {
+      showPage('manage-api-keys');
+    }
 
-function renderLeaderboardData() { const tId=document.getElementById('leaderboardTestSelect').value; const div=document.getElementById('leaderboardResults'); div.innerHTML=''; if(!tId) return; const scores=studentScores.filter(s=>s.testId===tId); const high={}; scores.forEach(s=>{ if(!high[s.studentId] || high[s.studentId].score<s.score) high[s.studentId]=s; }); Object.values(high).sort((a,b)=>b.score-a.score).forEach((r,i)=>{ const rank=i+1; div.innerHTML+=`<div class="list-item"><div><span class="rank-badge rank-${rank<4?rank:''}">#${rank}</span> <strong>${r.studentName}</strong></div><div style="font-weight:bold;">${Math.round((r.score/r.total)*100)}%</div></div>`; }); }
-function populateLeaderboardDropdown() { const sel=document.getElementById('leaderboardTestSelect'); sel.innerHTML='<option value="">Select test...</option>'; [...new Set(studentScores.map(s=>s.testId))].forEach(id=>{ const t=allTests.find(t=>t.id===id); if(t) sel.innerHTML+=`<option value="${id}">${t.name}</option>`; }); }
-    
-// Initialize history state
-history.replaceState({ view: 'landing' }, 'landing', '#landing');
+    function addApiKey() {
+      const newApiKey = document.getElementById('api-key').value;
+      // Add API key to database
+      set(ref(database, 'apiKeys/' + newApiKey), true);
+      apiKey = newApiKey;
+    }
 
-</script>
+    function updateApiKey() {
+      const newApiKey = document.getElementById('api-key').value;
+      // Update API key in database
+      update(ref(database, 'apiKeys'), {
+        [newApiKey]: true
+      });
+      apiKey = newApiKey;
+    }
+  </script>
 </body>
-</html> 
+</html>
